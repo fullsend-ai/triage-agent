@@ -15,8 +15,17 @@ host_files:
 
 skills: []
 
+pre_script: scripts/pre-triage.sh
+
 validation_loop:
-  script: scripts/validate-triage.sh
-  max_iterations: 3
+  script: scripts/validate-output-schema.sh
+  max_iterations: 2
+
+post_script: scripts/post-triage.sh
+
+runner_env:
+  GITHUB_ISSUE_URL: ${GITHUB_ISSUE_URL}
+  GH_TOKEN: ${GH_TOKEN}
+  FULLSEND_OUTPUT_SCHEMA: ${FULLSEND_DIR}/schemas/triage-result.schema.json
 
 timeout_minutes: 10
