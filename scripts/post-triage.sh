@@ -8,7 +8,7 @@
 #   GITHUB_ISSUE_URL  — HTML URL of the issue (e.g., https://github.com/org/repo/issues/42)
 #   GH_TOKEN          — GitHub token with issues read/write scope
 #
-# The agent writes its decision to output/triage-result.json (relative to
+# The agent writes its decision to output/agent-result.json (relative to
 # the iteration directory). This script finds the most recent iteration's output.
 #
 # IMPORTANT: Label mutations use the labels API directly (gh api) instead of
@@ -23,13 +23,13 @@ set -euo pipefail
 # we want the last one's output.
 RESULT_FILE=""
 for dir in iteration-*/output; do
-  if [[ -f "${dir}/triage-result.json" ]]; then
-    RESULT_FILE="${dir}/triage-result.json"
+  if [[ -f "${dir}/agent-result.json" ]]; then
+    RESULT_FILE="${dir}/agent-result.json"
   fi
 done
 
 if [[ -z "${RESULT_FILE}" ]]; then
-  echo "ERROR: triage-result.json not found in any iteration output directory"
+  echo "ERROR: agent-result.json not found in any iteration output directory"
   exit 1
 fi
 
@@ -60,11 +60,6 @@ echo "Issue: #${ISSUE_NUMBER}"
 # add_label uses the labels API to avoid firing issues.edited.
 add_label() {
   gh api "repos/${REPO}/issues/${ISSUE_NUMBER}/labels" -f "labels[]=$1" --silent
-}
-
-# remove_label uses the labels API to avoid firing issues.edited.
-remove_label() {
-  gh api "repos/${REPO}/issues/${ISSUE_NUMBER}/labels/$1" -X DELETE --silent 2>/dev/null || true
 }
 
 case "${ACTION}" in

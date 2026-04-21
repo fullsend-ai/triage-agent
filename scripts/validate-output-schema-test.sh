@@ -21,7 +21,7 @@ run_test() {
 
   local test_dir="${TMPDIR}/${test_name}"
   mkdir -p "${test_dir}/output"
-  echo "${json_content}" > "${test_dir}/output/triage-result.json"
+  echo "${json_content}" > "${test_dir}/output/agent-result.json"
 
   local exit_code=0
   FULLSEND_OUTPUT_SCHEMA="${SCHEMA}" \

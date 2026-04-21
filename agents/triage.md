@@ -67,7 +67,7 @@ Calculate overall clarity: `symptom*0.35 + cause*0.30 + reproduction*0.20 + impa
 
 ## Step 4: Decide and write result
 
-Based on your assessment, choose exactly one action and write the result as JSON to `$FULLSEND_OUTPUT_DIR/triage-result.json`.
+Based on your assessment, choose exactly one action and write the result as JSON to `$FULLSEND_OUTPUT_DIR/agent-result.json`.
 
 ### Action: `insufficient`
 
@@ -119,7 +119,7 @@ Information is sufficient for a developer to investigate and fix.
   "triage_summary": {
     "title": "Refined issue title (clear, specific, actionable)",
     "severity": "critical | high | medium | low",
-    "category": "bug | performance | security",
+    "category": "bug | performance | security | documentation | enhancement | other",
     "problem": "Clear description of the problem",
     "root_cause_hypothesis": "Most likely root cause",
     "reproduction_steps": ["step 1", "step 2"],

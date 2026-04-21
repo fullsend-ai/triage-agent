@@ -7,7 +7,7 @@
 # Required env vars:
 #   FULLSEND_OUTPUT_SCHEMA — path to the JSON Schema file
 #
-# The script looks for triage-result.json (or any .json file) in the
+# The script looks for agent-result.json (or any .json file) in the
 # iteration output directory. The working directory is the iteration dir
 # (set by run.go).
 
@@ -22,7 +22,7 @@ if [[ ! -d "${OUTPUT_DIR}" ]]; then
   exit 1
 fi
 
-RESULT_FILE="${OUTPUT_DIR}/triage-result.json"
+RESULT_FILE="${OUTPUT_DIR}/agent-result.json"
 if [[ ! -f "${RESULT_FILE}" ]]; then
   echo "FAIL: ${RESULT_FILE} not found"
   exit 1
