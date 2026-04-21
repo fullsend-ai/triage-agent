@@ -8,6 +8,10 @@
 # Required env vars:
 #   GITHUB_ISSUE_URL — HTML URL of the issue
 #   GH_TOKEN         — GitHub token with issues read/write scope
+#
+# IMPORTANT: Uses the labels API directly (DELETE /issues/{number}/labels/{name})
+# instead of gh issue edit --remove-label. gh issue edit uses PATCH /issues/{number}
+# which fires issues.edited, re-triggering the triage dispatch in the shim workflow.
 
 set -euo pipefail
 
@@ -22,7 +26,7 @@ ISSUE_NUMBER=$(basename "${GITHUB_ISSUE_URL}")
 echo "Resetting triage labels on ${REPO}#${ISSUE_NUMBER}"
 
 for label in needs-info ready-to-code duplicate not-ready not-reproducible; do
-  gh issue edit "${ISSUE_NUMBER}" --repo "${REPO}" --remove-label "${label}" 2>/dev/null || true
+  gh api "repos/${REPO}/issues/${ISSUE_NUMBER}/labels/${label}" -X DELETE --silent 2>/dev/null || true
 done
 
 echo "Label reset complete."

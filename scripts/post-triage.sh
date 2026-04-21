@@ -10,6 +10,12 @@
 #
 # The agent writes its decision to output/triage-result.json (relative to
 # the iteration directory). This script finds the most recent iteration's output.
+#
+# IMPORTANT: Label mutations use the labels API directly (gh api) instead of
+# gh issue edit. gh issue edit uses PATCH /issues/{number} which fires
+# issues.edited, re-triggering the triage dispatch in the shim workflow.
+# The labels API (POST/DELETE /issues/{number}/labels) only fires
+# issues.labeled/issues.unlabeled, avoiding the re-triage loop.
 
 set -euo pipefail
 
@@ -51,6 +57,16 @@ echo "Action: ${ACTION}"
 echo "Repo: ${REPO}"
 echo "Issue: #${ISSUE_NUMBER}"
 
+# add_label uses the labels API to avoid firing issues.edited.
+add_label() {
+  gh api "repos/${REPO}/issues/${ISSUE_NUMBER}/labels" -f "labels[]=$1" --silent
+}
+
+# remove_label uses the labels API to avoid firing issues.edited.
+remove_label() {
+  gh api "repos/${REPO}/issues/${ISSUE_NUMBER}/labels/$1" -X DELETE --silent 2>/dev/null || true
+}
+
 case "${ACTION}" in
   insufficient)
     if [[ -z "${COMMENT}" ]]; then
@@ -61,8 +77,8 @@ case "${ACTION}" in
     gh issue comment "${ISSUE_NUMBER}" --repo "${REPO}" --body "${COMMENT}"
 
     echo "Applying label..."
-    gh issue edit "${ISSUE_NUMBER}" --repo "${REPO}" --add-label "needs-info"
-    gh issue edit "${ISSUE_NUMBER}" --repo "${REPO}" --remove-label "ready-to-triage" 2>/dev/null || true
+    add_label "needs-info"
+    remove_label "ready-to-triage"
     ;;
 
   duplicate)
@@ -74,8 +90,8 @@ case "${ACTION}" in
     gh issue comment "${ISSUE_NUMBER}" --repo "${REPO}" --body "${COMMENT}"
 
     echo "Applying label and closing..."
-    gh issue edit "${ISSUE_NUMBER}" --repo "${REPO}" --add-label "duplicate"
-    gh issue edit "${ISSUE_NUMBER}" --repo "${REPO}" --remove-label "ready-to-triage" 2>/dev/null || true
+    add_label "duplicate"
+    remove_label "ready-to-triage"
     gh issue close "${ISSUE_NUMBER}" --repo "${REPO}" --reason "not planned"
     ;;
 
@@ -88,8 +104,8 @@ case "${ACTION}" in
     gh issue comment "${ISSUE_NUMBER}" --repo "${REPO}" --body "${COMMENT}"
 
     echo "Applying label..."
-    gh issue edit "${ISSUE_NUMBER}" --repo "${REPO}" --add-label "ready-to-code"
-    gh issue edit "${ISSUE_NUMBER}" --repo "${REPO}" --remove-label "ready-to-triage" 2>/dev/null || true
+    add_label "ready-to-code"
+    remove_label "ready-to-triage"
     ;;
 
   *)
