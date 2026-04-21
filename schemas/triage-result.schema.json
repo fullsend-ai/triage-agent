@@ -64,7 +64,7 @@
       "properties": {
         "title": { "type": "string", "minLength": 1 },
         "severity": { "type": "string", "enum": ["critical", "high", "medium", "low"] },
-        "category": { "type": "string", "minLength": 1 },
+        "category": { "type": "string", "enum": ["bug", "performance", "security", "documentation", "enhancement", "other"] },
         "problem": { "type": "string", "minLength": 1 },
         "root_cause_hypothesis": { "type": "string", "minLength": 1 },
         "reproduction_steps": { "type": "array", "items": { "type": "string" }, "minItems": 1 },

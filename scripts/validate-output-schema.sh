@@ -22,25 +22,10 @@ if [[ ! -d "${OUTPUT_DIR}" ]]; then
   exit 1
 fi
 
-# Prefer triage-result.json by name; fall back to any .json file.
-if [[ -f "${OUTPUT_DIR}/triage-result.json" ]]; then
-  RESULT_FILE="${OUTPUT_DIR}/triage-result.json"
-else
-  JSON_FILES=()
-  while IFS= read -r -d '' f; do
-    JSON_FILES+=("$f")
-  done < <(find "${OUTPUT_DIR}" -maxdepth 1 -name '*.json' -print0)
-
-  if [[ ${#JSON_FILES[@]} -eq 0 ]]; then
-    echo "FAIL: no JSON files found in ${OUTPUT_DIR}/"
-    exit 1
-  fi
-
-  if [[ ${#JSON_FILES[@]} -gt 1 ]]; then
-    echo "WARN: multiple JSON files found, using ${JSON_FILES[0]}"
-  fi
-
-  RESULT_FILE="${JSON_FILES[0]}"
+RESULT_FILE="${OUTPUT_DIR}/triage-result.json"
+if [[ ! -f "${RESULT_FILE}" ]]; then
+  echo "FAIL: ${RESULT_FILE} not found"
+  exit 1
 fi
 echo "Validating: ${RESULT_FILE} against ${FULLSEND_OUTPUT_SCHEMA}"
 
