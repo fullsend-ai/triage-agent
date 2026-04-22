@@ -3,7 +3,7 @@ version: 1
 # Sandbox policy for the code agent.
 #
 # Grants network access the code agent needs beyond the base sandbox:
-#   - Vertex AI (us-east5 inference + GCP auth token exchange)
+#   - Vertex AI (global inference + GCP auth token exchange)
 #   - GitHub API (gh/git only — curl intentionally excluded to prevent
 #     disallowedTools bypass via raw HTTP with the injected GH_TOKEN)
 #   - gitleaks releases (fallback download if not pre-installed in image)
