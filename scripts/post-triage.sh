@@ -126,7 +126,7 @@ case "${ACTION}" in
     printf '%s' "${COMMENT}" | gh issue comment "${ISSUE_NUMBER}" --repo "${REPO}" --body-file -
 
     echo "Removing bug-related labels..."
-    for label in bug bug-report; do
+    for label in bug bug-report type/bug; do
       gh api "repos/${REPO}/issues/${ISSUE_NUMBER}/labels/${label}" -X DELETE --silent 2>/dev/null || true
     done
 
