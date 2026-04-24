@@ -104,13 +104,10 @@ case "${ACTION}" in
 
     # Guard: reject sufficient results that contain information_gaps.
     # If the agent identified open questions, it should have used "insufficient".
-    INFO_GAPS=$(jq -r '.triage_summary.information_gaps // empty' "${RESULT_FILE}")
-    if [[ -n "${INFO_GAPS}" ]]; then
-      GAP_COUNT=$(jq '.triage_summary.information_gaps | length' "${RESULT_FILE}")
-      if [[ "${GAP_COUNT}" -gt 0 ]]; then
-        echo "ERROR: action is 'sufficient' but triage_summary contains ${GAP_COUNT} information_gaps — open questions must block triage"
-        exit 1
-      fi
+    GAP_COUNT=$(jq '.triage_summary.information_gaps // [] | length' "${RESULT_FILE}")
+    if [[ "${GAP_COUNT}" -gt 0 ]]; then
+      echo "ERROR: action is 'sufficient' but triage_summary contains ${GAP_COUNT} information_gaps — open questions must block triage"
+      exit 1
     fi
 
     echo "Posting triage summary..."
