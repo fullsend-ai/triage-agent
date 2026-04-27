@@ -476,7 +476,7 @@ You MUST run the test suite that covers the code you changed.
 Determine which packages to test from your changed files:
 
 ```bash
-git diff --name-only origin/<target-branch>..HEAD
+git diff --name-only origin/<target-branch>
 ```
 
 Full-suite runs (`go test ./...`, `npm test`, `pytest`) are acceptable as
