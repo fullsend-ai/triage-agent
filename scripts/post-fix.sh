@@ -88,12 +88,12 @@ else
   NO_PUSH=false
 fi
 
-# Scope to the agent's commit(s) only — not the entire branch. The fix agent
-# always creates new commits (never amends), so HEAD~1..HEAD captures exactly
-# the agent's work. Using MERGE_BASE..HEAD would include files the original PR
-# author changed, causing false positives in the protected-path check when the
-# PR legitimately modifies .github/ or other protected paths.
-CHANGED_FILES="$(git diff --name-only HEAD~1..HEAD 2>/dev/null || true)"
+# Scope to the agent's commit(s) only — not the entire branch. PRE_AGENT_HEAD
+# is set by fix.yml to the HEAD SHA before the harness runs, so this diff
+# captures every commit the agent made (including validation_loop retries).
+# Falls back to HEAD~1 if PRE_AGENT_HEAD is unset (shouldn't happen in CI).
+DIFF_BASE="${PRE_AGENT_HEAD:-$(git rev-parse HEAD~1 2>/dev/null || echo HEAD)}"
+CHANGED_FILES="$(git diff --name-only "${DIFF_BASE}..HEAD" 2>/dev/null || true)"
 
 if [ -z "${CHANGED_FILES}" ] && [ "${NO_PUSH}" = "false" ]; then
   echo "::warning::No changed files in agent's commit(s) — nothing to push"
@@ -112,7 +112,7 @@ if [ "${NO_PUSH}" = "false" ]; then
     for pattern in "${PROTECTED_PATHS[@]}"; do
       if [[ "${file}" == ${pattern}* ]]; then
         echo "::error::BLOCKED — agent modified protected path: ${pattern}"
-        echo "  ::error::  ${file}"
+        echo "::error::  ${file}"
         exit 1
       fi
     done
@@ -139,7 +139,7 @@ if [ "${NO_PUSH}" = "false" ]; then
     export PATH="${HOME}/.local/bin:${PATH}"
   fi
 
-  SCAN_RANGE="HEAD~1..HEAD"
+  SCAN_RANGE="${DIFF_BASE}..HEAD"
 
   gitleaks detect --source . --log-opts="${SCAN_RANGE}" --redact
   echo "Secret scan passed — no leaks in agent's commit(s)"
@@ -230,7 +230,13 @@ else
   fi
 
   echo "Processing fix-result.json: ${RESULT_FILE}"
-  python3 "${PROCESS_SCRIPT}" "${RESULT_FILE}" "${REPO_FULL_NAME}" "${PR_NUMBER}"
+  PROCESS_EXIT=0
+  python3 "${PROCESS_SCRIPT}" "${RESULT_FILE}" "${REPO_FULL_NAME}" "${PR_NUMBER}" || PROCESS_EXIT=$?
+  if [ "${PROCESS_EXIT}" -eq 1 ]; then
+    exit 1  # hard failure (bad input)
+  elif [ "${PROCESS_EXIT}" -ne 0 ]; then
+    echo "::warning::process-fix-result.py exited ${PROCESS_EXIT} — continuing with labels/summary"
+  fi
 fi
 
 # ---------------------------------------------------------------------------

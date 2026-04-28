@@ -1,5 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "fix-result.schema.json",
   "title": "Fix Agent Result",
   "description": "Structured output from the fix agent documenting actions taken on review feedback.",
   "type": "object",
