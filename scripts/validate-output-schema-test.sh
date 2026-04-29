@@ -136,6 +136,38 @@ run_test "invalid-category-rejected" \
   '{"action":"sufficient","reasoning":"ok","clarity_scores":{"symptom":0.9,"cause":0.8,"reproduction":0.9,"impact":0.7,"overall":0.85},"triage_summary":{"title":"Bug","severity":"high","category":"invented-category","problem":"crash","root_cause_hypothesis":"null ptr","reproduction_steps":["step 1"],"impact":"all users","recommended_fix":"fix","proposed_test_case":"test"},"comment":"Done."}' \
   "false"
 
+# --- fix-result.schema.json conditional allOf/if/then rules ---
+
+run_test_custom_filename "fix-missing-description" \
+  '{"pr_number":42,"summary":"s","trigger_source":"bot","iteration":1,"tests_passed":true,"actions":[{"type":"fix","finding":"nil check"}],"files_changed":["f.go"]}' \
+  "fix-result.json" \
+  "${FIX_SCHEMA}" \
+  "false"
+
+run_test_custom_filename "disagree-missing-reason" \
+  '{"pr_number":42,"summary":"s","trigger_source":"bot","iteration":1,"tests_passed":true,"actions":[{"type":"disagree","finding":"nil check"}],"files_changed":["f.go"]}' \
+  "fix-result.json" \
+  "${FIX_SCHEMA}" \
+  "false"
+
+run_test_custom_filename "fix-with-description-valid" \
+  '{"pr_number":42,"summary":"s","trigger_source":"bot","iteration":1,"tests_passed":true,"actions":[{"type":"fix","finding":"nil check","description":"Added nil check"}],"files_changed":["f.go"]}' \
+  "fix-result.json" \
+  "${FIX_SCHEMA}" \
+  "true"
+
+run_test_custom_filename "disagree-with-reason-valid" \
+  '{"pr_number":42,"summary":"s","trigger_source":"bot","iteration":1,"tests_passed":true,"actions":[{"type":"disagree","finding":"nil check","reason":"Already guarded upstream"}],"files_changed":["f.go"]}' \
+  "fix-result.json" \
+  "${FIX_SCHEMA}" \
+  "true"
+
+run_test_custom_filename "empty-actions-rejected" \
+  '{"pr_number":42,"summary":"s","trigger_source":"bot","iteration":1,"tests_passed":true,"actions":[],"files_changed":["f.go"]}' \
+  "fix-result.json" \
+  "${FIX_SCHEMA}" \
+  "false"
+
 # --- FULLSEND_OUTPUT_FILE path traversal guard ---
 run_test_custom_filename "path-traversal-stripped" \
   '{"pr_number":42,"summary":"Fixed 1 issue.","trigger_source":"bot","iteration":1,"tests_passed":true,"actions":[{"type":"fix","finding":"nil check","description":"Added nil check","path":"pkg/handler.go"}],"files_changed":["pkg/handler.go"]}' \
