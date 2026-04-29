@@ -243,11 +243,14 @@ fi
 # 6. Iteration-cap warning label
 # ---------------------------------------------------------------------------
 ITERATION="${FIX_ITERATION:-1}"
-CAP="${ITERATION_CAP:-5}"
-WARN_THRESHOLD=$(( CAP - 1 ))
+BOT_CAP="${ITERATION_CAP:-5}"
+WARN_THRESHOLD=$(( BOT_CAP - 1 ))
 
-if [ "${ITERATION}" -ge "${WARN_THRESHOLD}" ]; then
-  echo "::warning::Fix iteration ${ITERATION} is approaching cap of ${CAP}"
+# The needs-human label is based on the bot cap — it signals that the
+# autonomous review→fix loop needs human direction. Human-triggered /fix
+# runs have a separate, higher cap (ITERATION_CAP_HUMAN).
+if [ "${ITERATION}" -ge "${WARN_THRESHOLD}" ] && [ "${TRIGGER_SOURCE:-bot}" != "human" ]; then
+  echo "::warning::Fix iteration ${ITERATION} is approaching bot cap of ${BOT_CAP}"
   gh label create "needs-human" --repo "${REPO_FULL_NAME}" \
     --description "Agent loop needs human intervention" --color "D93F0B" \
     --force 2>/dev/null || true
@@ -264,4 +267,8 @@ echo "  Branch: ${BRANCH:-none}"
 echo "  PR: #${PR_NUMBER}"
 if [ "${NO_PUSH}" = "true" ]; then echo "  Pushed: no"; else echo "  Pushed: yes"; fi
 echo "  Trigger: ${TRIGGER_SOURCE}"
-echo "  Iteration: ${ITERATION} of ${CAP}"
+if [ "${TRIGGER_SOURCE:-bot}" = "human" ]; then
+  echo "  Iteration: ${ITERATION} of ${ITERATION_CAP_HUMAN:-10} (human cap)"
+else
+  echo "  Iteration: ${ITERATION} of ${BOT_CAP} (bot cap)"
+fi

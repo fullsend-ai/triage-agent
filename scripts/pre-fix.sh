@@ -12,7 +12,8 @@
 #
 # Optional environment variables:
 #   FIX_ITERATION      — current iteration count (default: 1)
-#   ITERATION_CAP      — max iterations before human escalation (default: 5)
+#   ITERATION_CAP      — max bot-triggered iterations (default: 5)
+#   ITERATION_CAP_HUMAN — max human-triggered iterations (default: 10)
 #   HUMAN_INSTRUCTION  — instruction text (only when TRIGGER_SOURCE=human)
 set -euo pipefail
 
@@ -57,12 +58,24 @@ fi
 # Iteration cap check
 # ---------------------------------------------------------------------------
 ITERATION="${FIX_ITERATION:-1}"
-CAP="${ITERATION_CAP:-5}"
+BOT_CAP="${ITERATION_CAP:-5}"
+HUMAN_CAP="${ITERATION_CAP_HUMAN:-10}"
+
+if [[ "${TRIGGER_SOURCE}" == "human" ]]; then
+  CAP="${HUMAN_CAP}"
+else
+  CAP="${BOT_CAP}"
+fi
 
 if [[ "${ITERATION}" -gt "${CAP}" ]]; then
-  echo "::error::Fix iteration ${ITERATION} exceeds cap of ${CAP}. Escalating to human."
-  echo "::error::The review→fix loop has run ${ITERATION} times without converging."
-  echo "::error::A human must intervene — apply the 'needs-human' label to the PR."
+  if [[ "${TRIGGER_SOURCE}" == "human" ]]; then
+    echo "::error::Fix iteration ${ITERATION} exceeds human cap of ${CAP}."
+    echo "::error::The /fix loop has run ${ITERATION} times. Further attempts are blocked."
+  else
+    echo "::error::Fix iteration ${ITERATION} exceeds bot cap of ${CAP}. Escalating to human."
+    echo "::error::The review→fix loop has run ${ITERATION} times without converging."
+    echo "::error::A human can still direct the agent with /fix (up to ${HUMAN_CAP} total iterations)."
+  fi
   exit 1
 fi
 

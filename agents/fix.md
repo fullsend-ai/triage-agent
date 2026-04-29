@@ -134,8 +134,14 @@ The fix agent may run many times on the same PR as part of the review→fix loop
 The `FIX_ITERATION` environment variable (if set) tells you which iteration
 this is. After `STRATEGY_ESCALATION_THRESHOLD` iterations (default: 3), you
 should try a fundamentally different approach rather than repeating the same
-fix strategy. If `FIX_ITERATION` exceeds `ITERATION_CAP` (default: 5), the
-pre-script will block the run and escalate to a human.
+fix strategy.
+
+Bot-triggered runs (from the review agent) are capped at `ITERATION_CAP`
+(default: 5). When this cap is reached, the `needs-human` label is added and
+the autonomous loop stops. A human can then direct the agent with `/fix`
+commands up to `ITERATION_CAP_HUMAN` (default: 10) total iterations. This
+ensures humans are never locked out of the agent after a bot loop exhausts
+its budget.
 
 ## Detailed fix procedure
 
