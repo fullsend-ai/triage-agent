@@ -84,6 +84,12 @@ ITEMS_JSON=$(gh api graphql -f query='
   }
 ' -f projectId="${PROJECT_ID}")
 
+# Warn if we hit the pagination limit — items beyond 100 will be missed.
+ITEM_COUNT=$(echo "${ITEMS_JSON}" | jq '[.data.node.items.nodes[]] | length')
+if [[ "${ITEM_COUNT}" -ge 100 ]]; then
+  echo "WARNING: project board has ${ITEM_COUNT}+ items; pagination limit is 100. Some items may be missed."
+fi
+
 # Find the first open issue with no RICE Score.
 UNSCORED_URL=$(echo "${ITEMS_JSON}" | jq -r --arg fid "${SCORE_FIELD_ID}" '
   [.data.node.items.nodes[]

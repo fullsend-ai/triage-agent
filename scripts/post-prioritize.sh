@@ -80,7 +80,7 @@ REPO=$(echo "${GITHUB_ISSUE_URL}" | sed 's|https://github.com/||; s|/issues/.*||
 ISSUE_NUMBER=$(basename "${GITHUB_ISSUE_URL}")
 
 # Find the project item ID for this issue.
-ITEM_ID=$(gh api graphql -f query='
+ITEMS_RESPONSE=$(gh api graphql -f query='
   query($projectId: ID!) {
     node(id: $projectId) {
       ... on ProjectV2 {
@@ -93,8 +93,15 @@ ITEM_ID=$(gh api graphql -f query='
       }
     }
   }
-' -f projectId="${PROJECT_ID}" \
-  | jq -r --arg url "${GITHUB_ISSUE_URL}" \
+' -f projectId="${PROJECT_ID}")
+
+# Warn if we hit the pagination limit.
+ITEM_COUNT=$(echo "${ITEMS_RESPONSE}" | jq '[.data.node.items.nodes[]] | length')
+if [[ "${ITEM_COUNT}" -ge 100 ]]; then
+  echo "WARNING: project board has ${ITEM_COUNT}+ items; pagination limit is 100. Issue may not be found."
+fi
+
+ITEM_ID=$(echo "${ITEMS_RESPONSE}" | jq -r --arg url "${GITHUB_ISSUE_URL}" \
     '.data.node.items.nodes[] | select(.content.url == $url) | .id')
 
 if [[ -z "${ITEM_ID}" || "${ITEM_ID}" == "null" ]]; then
@@ -163,6 +170,12 @@ RANKED_JSON=$(gh api graphql -f query='
     }
   }
 ' -f projectId="${PROJECT_ID}")
+
+# Warn if we hit the pagination limit.
+RANKED_COUNT=$(echo "${RANKED_JSON}" | jq '[.data.node.items.nodes[]] | length')
+if [[ "${RANKED_COUNT}" -ge 100 ]]; then
+  echo "WARNING: project board has ${RANKED_COUNT}+ items; reranking only covers the first 100."
+fi
 
 # Build a sorted list: scored items descending by score, then unscored items.
 SORTED_IDS=$(echo "${RANKED_JSON}" | jq -r --arg fid "${SCORE_FIELD_ID}" '
