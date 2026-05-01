@@ -20,7 +20,6 @@ network_policies:
         enforcement: enforce
         access: allow
     binaries:
-      - path: "**/curl"
       - path: "**/claude"
       - path: "**/node"
 
