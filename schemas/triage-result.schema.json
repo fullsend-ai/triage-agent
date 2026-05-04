@@ -9,7 +9,7 @@
   "properties": {
     "action": {
       "type": "string",
-      "enum": ["insufficient", "duplicate", "sufficient", "blocked"]
+      "enum": ["insufficient", "duplicate", "sufficient", "blocked", "feature-request"]
     },
     "reasoning": {
       "type": "string",
@@ -52,6 +52,18 @@
     {
       "if": { "properties": { "action": { "const": "blocked" } }, "required": ["action"] },
       "then": { "required": ["blocked_by"] }
+    },
+    {
+      "if": { "properties": { "action": { "const": "feature-request" } }, "required": ["action"] },
+      "then": {
+        "not": {
+          "anyOf": [
+            { "required": ["clarity_scores"] },
+            { "required": ["triage_summary"] },
+            { "required": ["duplicate_of"] }
+          ]
+        }
+      }
     }
   ],
   "$defs": {
@@ -81,8 +93,7 @@
         "environment": { "type": "string" },
         "impact": { "type": "string", "minLength": 1 },
         "recommended_fix": { "type": "string", "minLength": 1 },
-        "proposed_test_case": { "type": "string", "minLength": 1 },
-        "information_gaps": { "type": "array", "items": { "type": "string" } }
+        "proposed_test_case": { "type": "string", "minLength": 1 }
       },
       "additionalProperties": false
     }

@@ -77,7 +77,7 @@ case "${ACTION}" in
       exit 1
     fi
     echo "Posting clarifying question..."
-    printf '%s' "${COMMENT}" | gh issue comment "${ISSUE_NUMBER}" --repo "${REPO}" --body-file -
+    printf '%s' "${COMMENT}" | fullsend post-comment --repo "${REPO}" --number "${ISSUE_NUMBER}" --marker "<!-- fullsend:triage-agent -->" --token "${GH_TOKEN}" --result -
 
     echo "Applying label..."
     remove_label "blocked"
@@ -95,7 +95,7 @@ case "${ACTION}" in
       exit 1
     fi
     echo "Posting duplicate notice..."
-    printf '%s' "${COMMENT}" | gh issue comment "${ISSUE_NUMBER}" --repo "${REPO}" --body-file -
+    printf '%s' "${COMMENT}" | fullsend post-comment --repo "${REPO}" --number "${ISSUE_NUMBER}" --marker "<!-- fullsend:triage-agent -->" --token "${GH_TOKEN}" --result -
 
     echo "Applying label and closing..."
     remove_label "blocked"
@@ -133,12 +133,48 @@ case "${ACTION}" in
       echo "ERROR: action is 'sufficient' but no comment provided"
       exit 1
     fi
+
+    # Guard: reject sufficient results that contain information_gaps.
+    # If the agent identified open questions, it should have used "insufficient".
+    GAP_COUNT=$(jq '.triage_summary.information_gaps // [] | length' "${RESULT_FILE}")
+    if [[ "${GAP_COUNT}" -gt 0 ]]; then
+      echo "ERROR: action is 'sufficient' but triage_summary contains ${GAP_COUNT} information_gaps — open questions must block triage"
+      exit 1
+    fi
+
     echo "Posting triage summary..."
+    printf '%s' "${COMMENT}" | fullsend post-comment --repo "${REPO}" --number "${ISSUE_NUMBER}" --marker "<!-- fullsend:triage-agent -->" --token "${GH_TOKEN}" --result -
+
+    # Only bugs get the ready-to-code label (which triggers the code agent).
+    # Non-bug sufficient results (enhancement, performance, documentation, etc.)
+    # receive the triaged label instead and wait for human prioritization.
+    CATEGORY=$(jq -r '.triage_summary.category // "unknown"' "${RESULT_FILE}")
+    echo "Category: ${CATEGORY}"
+    if [[ "${CATEGORY}" == "bug" ]]; then
+      echo "Applying ready-to-code label (bug)..."
+      add_label "ready-to-code"
+    else
+      echo "Applying triaged label (non-bug: ${CATEGORY})..."
+      add_label "triaged"
+    fi
+    ;;
+
+  feature-request)
+    if [[ -z "${COMMENT}" ]]; then
+      echo "ERROR: action is 'feature-request' but no comment provided"
+      exit 1
+    fi
+    echo "Posting feature-request comment..."
     printf '%s' "${COMMENT}" | gh issue comment "${ISSUE_NUMBER}" --repo "${REPO}" --body-file -
 
-    echo "Applying label..."
+    echo "Removing bug-related labels..."
     remove_label "blocked"
-    add_label "ready-to-code"
+    for label in bug bug-report type/bug; do
+      gh api "repos/${REPO}/issues/${ISSUE_NUMBER}/labels/${label}" -X DELETE --silent 2>/dev/null || true
+    done
+
+    echo "Applying type/feature label..."
+    add_label "type/feature"
     ;;
 
   *)
