@@ -40,7 +40,7 @@ if [[ ! "${ORIGINATING_URL}" =~ ^https://github\.com/[a-zA-Z0-9._-]+/[a-zA-Z0-9.
   echo "ERROR: ORIGINATING_URL does not match expected pattern: ${ORIGINATING_URL}"
   exit 1
 fi
-ORIGINATING_REPO=$(echo "${ORIGINATING_URL}" | sed 's|https://github.com/||; s|/\(issues\|pull\)/.*||')
+ORIGINATING_REPO=$(echo "${ORIGINATING_URL}" | sed -E 's#https://github.com/##; s#/(issues|pull)/.*##')
 ORIGINATING_NUMBER=$(basename "${ORIGINATING_URL}")
 
 echo "Originating: ${ORIGINATING_REPO}#${ORIGINATING_NUMBER}"
