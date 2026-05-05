@@ -79,30 +79,42 @@ PROJECT_ID=$(gh project view "${PROJECT_NUMBER}" --owner "${ORG}" --format json 
 REPO=$(echo "${GITHUB_ISSUE_URL}" | sed 's|https://github.com/||; s|/issues/.*||')
 ISSUE_NUMBER=$(basename "${GITHUB_ISSUE_URL}")
 
-# Find the project item ID for this issue.
-ITEMS_RESPONSE=$(gh api graphql -f query='
-  query($projectId: ID!) {
-    node(id: $projectId) {
-      ... on ProjectV2 {
-        items(first: 100) {
-          nodes {
-            id
-            content { ... on Issue { url } }
+# Find the project item ID for this issue (paginate through all items).
+ITEM_ID=""
+CURSOR=""
+HAS_NEXT_PAGE=true
+
+while [[ "${HAS_NEXT_PAGE}" == "true" && -z "${ITEM_ID}" ]]; do
+  if [[ -z "${CURSOR}" ]]; then
+    AFTER_ARG=""
+  else
+    AFTER_ARG=", after: \$cursor"
+  fi
+
+  PAGE_JSON=$(gh api graphql -f query="
+    query(\$projectId: ID!$([ -n "${CURSOR}" ] && echo ', $cursor: String!')) {
+      node(id: \$projectId) {
+        ... on ProjectV2 {
+          items(first: 100${AFTER_ARG}) {
+            pageInfo {
+              hasNextPage
+              endCursor
+            }
+            nodes {
+              id
+              content { ... on Issue { url } }
+            }
           }
         }
       }
     }
-  }
-' -f projectId="${PROJECT_ID}")
+  " -f projectId="${PROJECT_ID}" ${CURSOR:+-f cursor="${CURSOR}"})
 
-# Warn if we hit the pagination limit.
-ITEM_COUNT=$(echo "${ITEMS_RESPONSE}" | jq '[.data.node.items.nodes[]] | length')
-if [[ "${ITEM_COUNT}" -ge 100 ]]; then
-  echo "WARNING: project board has ${ITEM_COUNT}+ items; pagination limit is 100. Issue may not be found."
-fi
-
-ITEM_ID=$(echo "${ITEMS_RESPONSE}" | jq -r --arg url "${GITHUB_ISSUE_URL}" \
-    '.data.node.items.nodes[] | select(.content.url == $url) | .id')
+  ITEM_ID=$(echo "${PAGE_JSON}" | jq -r --arg url "${GITHUB_ISSUE_URL}" \
+    '.data.node.items.nodes[] | select(.content.url == $url) | .id // empty')
+  HAS_NEXT_PAGE=$(echo "${PAGE_JSON}" | jq -r '.data.node.items.pageInfo.hasNextPage')
+  CURSOR=$(echo "${PAGE_JSON}" | jq -r '.data.node.items.pageInfo.endCursor')
+done
 
 if [[ -z "${ITEM_ID}" || "${ITEM_ID}" == "null" ]]; then
   echo "ERROR: issue ${GITHUB_ISSUE_URL} not found on project board"
