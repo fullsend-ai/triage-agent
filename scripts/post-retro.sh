@@ -52,6 +52,10 @@ echo "Found ${PROPOSAL_COUNT} proposal(s)"
 ISSUE_LINKS=""
 for i in $(seq 0 $((PROPOSAL_COUNT - 1))); do
   TARGET_REPO=$(jq -r ".proposals[$i].target_repo" "${RESULT_FILE}")
+  if [[ ! "${TARGET_REPO}" =~ ^[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+$ ]]; then
+    echo "ERROR: proposal[$i].target_repo is not a valid owner/repo: ${TARGET_REPO}"
+    exit 1
+  fi
   TITLE=$(jq -r ".proposals[$i].title" "${RESULT_FILE}")
 
   # Build the issue body from the four sections.
@@ -74,7 +78,8 @@ for i in $(seq 0 $((PROPOSAL_COUNT - 1))); do
   fi
 
   echo "Created: ${ISSUE_URL}"
-  ISSUE_LINKS="${ISSUE_LINKS}- [${TITLE}](${ISSUE_URL}) (in \`${TARGET_REPO}\`)\n"
+  ISSUE_LINKS="${ISSUE_LINKS}- [${TITLE}](${ISSUE_URL}) (in \`${TARGET_REPO}\`)
+"
 done
 
 # Post summary comment on the originating PR/issue.
@@ -82,7 +87,7 @@ done
 SUMMARY=$(jq -r '.summary' "${RESULT_FILE}")
 
 if [[ "${PROPOSAL_COUNT}" -gt 0 ]]; then
-  COMMENT=$(printf '%s\n\n### Proposals filed\n\n%b' "${SUMMARY}" "${ISSUE_LINKS}")
+  COMMENT=$(printf '%s\n\n### Proposals filed\n\n%s' "${SUMMARY}" "${ISSUE_LINKS}")
 else
   COMMENT="${SUMMARY}"
 fi
