@@ -12,14 +12,6 @@
 
 set -euo pipefail
 
-# Read issue URL from pre-script output (fullsend doesn't propagate
-# pre-script env exports to the post-script process).
-# Reads the value directly instead of sourcing to avoid executing arbitrary shell.
-if [[ -f /tmp/pre-prioritize-output.env ]]; then
-  GITHUB_ISSUE_URL=$(grep -oP '(?<=GITHUB_ISSUE_URL=")[^"]+' /tmp/pre-prioritize-output.env || true)
-  export GITHUB_ISSUE_URL
-fi
-
 : "${GITHUB_ISSUE_URL:?GITHUB_ISSUE_URL must be set}"
 : "${GH_TOKEN:?GH_TOKEN must be set}"
 : "${ORG:?ORG must be set}"
