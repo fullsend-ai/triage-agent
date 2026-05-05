@@ -6,12 +6,13 @@
 #
 # Required env vars:
 #   ORIGINATING_URL — HTML URL of the PR or issue that triggered retro
-#   GH_TOKEN        — GitHub token with read scope
 #
 # Optional env vars:
 #   RETRO_COMMENT   — The /retro comment text (empty for automatic triggers)
 
 set -euo pipefail
+
+: "${ORIGINATING_URL:?ORIGINATING_URL is required}"
 
 # Accept both issue and PR URLs.
 if [[ ! "${ORIGINATING_URL}" =~ ^https://github\.com/[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+/(issues|pull)/[0-9]+$ ]]; then
