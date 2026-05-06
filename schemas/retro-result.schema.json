@@ -15,6 +15,7 @@
     },
     "proposals": {
       "type": "array",
+      "maxItems": 3,
       "items": { "$ref": "#/$defs/proposal" },
       "description": "List of improvement proposals. Each becomes a GitHub issue."
     }
@@ -39,21 +40,25 @@
         "what_happened": {
           "type": "string",
           "minLength": 1,
+          "maxLength": 8192,
           "description": "Timeline of events with links to logs, PR comments, and agent runs."
         },
         "what_could_go_better": {
           "type": "string",
           "minLength": 1,
+          "maxLength": 8192,
           "description": "Improvement opportunities with honest uncertainty assessment."
         },
         "proposed_change": {
           "type": "string",
           "minLength": 1,
+          "maxLength": 8192,
           "description": "What to change and where, specific enough for an implementer to act on."
         },
         "validation_criteria": {
           "type": "string",
           "minLength": 1,
+          "maxLength": 8192,
           "description": "How to know the change had the desired effect. Measurable or observable outcomes."
         }
       }

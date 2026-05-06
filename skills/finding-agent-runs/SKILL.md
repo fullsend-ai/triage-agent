@@ -13,7 +13,7 @@ Given an issue or PR, find the fullsend agent workflow runs using `gh` CLI.
 ## Setup
 
 ```bash
-ORG=$(gh repo view --json owner -q .owner.login)
+ORG=$(echo "${REPO_FULL_NAME:-$(gh repo view --json owner -q .owner.login)}" | cut -d/ -f1)
 DISPATCH_REPO="${ORG}/.fullsend"
 ```
 
