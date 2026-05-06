@@ -8,7 +8,7 @@ skills:
   - retro-analysis
   - finding-agent-runs
 tools: >-
-  Read, Grep, Glob, Bash
+  Read, Grep, Glob, Bash(gh,jq)
 disallowedTools: >-
   Write, Edit, NotebookEdit
 model: opus

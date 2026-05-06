@@ -21,7 +21,7 @@ DISPATCH_REPO="${ORG}/.fullsend"
 
 ### From an issue
 
-1. Find triage dispatches (triggered by `/triage` or `needs-info` comments):
+1. Find triage dispatches (triggered by `/triage` command or `needs-info` label responses):
 
 ```bash
 gh run list --repo "$REPO_FULL_NAME" --workflow=fullsend.yaml \
@@ -86,7 +86,7 @@ You have a large amount of context to cover. Use subagents to avoid overflowing 
 - **Trace reader:** "Download and read the JSONL reasoning trace for run <RUN_ID>. Summarize what decisions the agent made and why."
 - **Comment analyzer:** "Read all comments on PR #N. Categorize them: agent review comments, human review comments, CI results, human interventions."
 - **Pattern searcher:** "Search the last 10 retro agent issues in <REPO>. List any recurring themes or prior proposals related to <TOPIC>."
-- **Harness inspector:** "Read the harness config at .fullsend/harness/<AGENT>.yaml and the agent definition at .fullsend/agents/<AGENT>.md. Summarize the agent's configuration and constraints."
+- **Harness inspector:** "Read the harness config at harness/<AGENT>.yaml and the agent definition at agents/<AGENT>.md in the .fullsend repo. Summarize the agent's configuration and constraints."
 
 ### Keep your main context for synthesis
 
@@ -136,3 +136,7 @@ Write a single JSON file to `$FULLSEND_OUTPUT_DIR/agent-result.json` with this s
 ### When to propose nothing
 
 If the workflow went well and you cannot identify meaningful improvements, write a summary saying so and return an empty proposals array. A retro that finds nothing wrong is a valid outcome.
+
+## Constraints
+
+The agent definition (`agents/retro.md`) is the authoritative list of prohibitions. This skill does not restate them.

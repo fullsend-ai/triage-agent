@@ -30,9 +30,7 @@ post_script: scripts/post-retro.sh
 
 runner_env:
   ORIGINATING_URL: "${ORIGINATING_URL}"
-  RETRO_COMMENT: "${RETRO_COMMENT}"
   REPO_FULL_NAME: "${REPO_FULL_NAME}"
-  RETRO_SANDBOX_TOKEN: "${RETRO_SANDBOX_TOKEN}"
   GH_TOKEN: "${GH_TOKEN}"
   FULLSEND_OUTPUT_SCHEMA: ${FULLSEND_DIR}/schemas/retro-result.schema.json
 
