@@ -99,11 +99,6 @@ Merge the docs-review findings into the findings list from step 3.
 Documentation staleness findings are capped at `high` severity (never
 `critical`), so they contribute to the outcome but do not dominate it.
 
-Skip this step if:
-- The PR contains no code changes (docs-only or config-only PRs)
-- The PR is a revert
-- FILE_COUNT exceeds 200 (the diff was already too large for review)
-
 Proceed to step 5 regardless of outcome.
 
 ### 5. PR-specific checks

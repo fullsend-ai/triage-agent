@@ -13,13 +13,13 @@ Given an issue or PR, find the fullsend agent workflow runs using `gh` CLI.
 ## Setup
 
 ```bash
-ORG=$(gh repo view --json owner -q .owner.login)
+ORG=$(echo "${REPO_FULL_NAME:-$(gh repo view --json owner -q .owner.login)}" | cut -d/ -f1)
 DISPATCH_REPO="${ORG}/.fullsend"
 ```
 
 The shim workflow (`fullsend.yaml`) runs in the source repo on `main`. It
 dispatches to `${DISPATCH_REPO}` which runs the agent workflows
-(`triage.yml`, `code.yml`, `review.yml`).
+(`triage.yml`, `code.yml`, `review.yml`, `retro.yml`).
 
 ## Issue → Agent Runs
 
@@ -85,6 +85,24 @@ Confirm `dispatch-review completed/success`, then find the run:
 
 ```bash
 gh run list --repo "${DISPATCH_REPO}" --workflow=review.yml --limit 5 \
+  --json databaseId,status,conclusion,createdAt
+```
+
+### Retro dispatch
+
+Retro dispatches from `pull_request_target` (on PR close) and from
+`issue_comment` events (the `/retro` command):
+
+```bash
+gh run list --workflow=fullsend.yaml \
+  --json databaseId,status,conclusion,event,createdAt \
+  -q '.[] | select(.event == "pull_request_target" or .event == "issue_comment")'
+```
+
+Find the actual retro agent run:
+
+```bash
+gh run list --repo "${DISPATCH_REPO}" --workflow=retro.yml --limit 5 \
   --json databaseId,status,conclusion,createdAt
 ```
 
