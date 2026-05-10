@@ -16,6 +16,14 @@ docs describing behavior that no longer exists. This skill detects that
 drift by matching the PR's code changes against in-repo documentation
 and flagging docs whose descriptions contradict the new code.
 
+## Context management
+
+This skill involves scanning documentation files across the repository,
+which can consume significant context. Dispatch a subagent to carry out
+the process below, keeping the main review context free for code-review
+and PR-specific checks. The subagent should return a list of findings
+(or an empty list if no stale docs were found).
+
 ## Process
 
 Follow these steps in order. Do not skip steps.
