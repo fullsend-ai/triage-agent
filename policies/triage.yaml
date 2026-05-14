@@ -16,14 +16,19 @@ network_policies:
     endpoints:
       - host: "*.github.com"
         port: 443
-        protocol: tcp
+        protocol: rest
         enforcement: enforce
-        access: allow
+        access: read-write
+      - host: "api.anthropic.com"
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        access: read-write
       - host: "*.googleapis.com"
         port: 443
-        protocol: tcp
+        protocol: rest
         enforcement: enforce
-        access: allow
+        access: read-write
     binaries:
       - path: "**/curl"
       - path: "**/claude"
