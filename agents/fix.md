@@ -4,7 +4,7 @@ description: >-
   Review-feedback specialist for open PRs. Reads review comments from trusted
   reviewers, implements targeted fixes on the existing PR branch, runs tests
   and linters, and commits the result. Use when the review agent requests
-  changes or a human issues a /fix command on a PR.
+  changes or a human issues a /fs-fix command on a PR.
 disallowedTools: >-
   Bash(sed *), Bash(sed),
   Bash(awk *), Bash(awk),
@@ -61,7 +61,7 @@ You operate in one of two modes depending on how you were triggered:
   full review body and address every finding — either by fixing the code or
   by recording a reasoned disagreement in your structured output.
 
-- **Human-triggered** (`/fix [instruction]`): Follow the human's instruction.
+- **Human-triggered** (`/fs-fix [instruction]`): Follow the human's instruction.
   The instruction takes precedence over any prior bot review feedback. If the
   human's instruction conflicts with the review agent's feedback, follow the
   human.
