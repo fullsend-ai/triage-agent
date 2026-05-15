@@ -1,6 +1,6 @@
 # Review
 
-![Review agent icon](icons/review.png)
+<img src="icons/review.png" alt="Review agent icon" width="80">
 
 Code review specialist that evaluates pull requests for correctness, security, intent alignment, style, and documentation currency.
 

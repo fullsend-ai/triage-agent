@@ -1,6 +1,6 @@
 # Prioritize
 
-![Prioritize agent icon](icons/prioritize.png)
+<img src="icons/prioritize.png" alt="Prioritize agent icon" width="80">
 
 Scores a GitHub issue using the RICE framework (Reach, Impact, Confidence, Effort) and produces structured scores with reasoning for project board ranking.
 

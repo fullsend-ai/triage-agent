@@ -1,6 +1,6 @@
 # Code
 
-![Code agent icon](icons/coder.png)
+<img src="icons/coder.png" alt="Code agent icon" width="80">
 
 Implementation specialist that reads triaged GitHub issues, implements fixes or features following repository conventions, runs tests and linters, and commits to a local feature branch.
 
