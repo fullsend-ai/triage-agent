@@ -1,6 +1,6 @@
 # Triage
 
-![Triage agent icon](icons/triage.png)
+<img src="icons/triage.png" alt="Triage agent icon" width="80">
 
 Inspects a GitHub issue, assesses information sufficiency, and produces a structured triage decision that determines whether the issue is ready for implementation.
 
@@ -82,7 +82,7 @@ invent labels or apply labels not listed here.
 ## Control labels (never recommend these)
 
 These are managed by the triage pipeline. Never include them in `label_actions`:
-`needs-info`, `ready-to-code`, `duplicate`, `not-ready`, `triaged`.
+`needs-info`, `ready-to-code`, `duplicate`, `blocked`, `triaged`.
 
 ## Area labels
 
