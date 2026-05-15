@@ -60,10 +60,12 @@ it with your own version to encode your team's labeling knowledge directly in
 the skill, keeping it out of `CLAUDE.md` (where it would bloat context for
 every agent).
 
-To shadow the OOTB skill, create your own `issue-labels` skill in your
-`.fullsend` config repo at `customized/skills/issue-labels/SKILL.md`. At
-runtime, your version replaces the upstream default — no other configuration
-needed.
+To shadow the OOTB skill, create your own `issue-labels` skill in
+`.agents/skills/issue-labels/SKILL.md` and symlink `.claude/skills` to
+`.agents/skills` so it's discoverable by both fullsend and local agent tooling.
+You can also shadow it at the org level in your `.fullsend` config repo at
+`customized/skills/issue-labels/SKILL.md`. At runtime, your version replaces
+the upstream default — no other configuration needed.
 
 Here's an example that encodes domain-specific labeling rules:
 
