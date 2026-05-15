@@ -170,6 +170,60 @@ Verify the change scope matches the linked issue's authorization. A PR
 labeled "bug fix" that adds new capability is a feature, regardless of
 the label. Add a finding if the scope exceeds authorization.
 
+#### Protected paths
+
+Check whether the PR modifies files under protected paths. These are
+governance and infrastructure files that require human approval — the
+review agent MUST NEVER approve changes to them without raising
+findings.
+
+Protected paths (kept in sync with `post-review.sh`):
+
+- `.github/`
+- `.claude/`
+- `agents/`
+- `harness/`
+- `policies/`
+- `scripts/`
+- `api-servers/`
+- `CODEOWNERS`
+- `.pre-commit-config.yaml`
+- `.gitattributes`
+
+For each file in the PR diff, check whether its path starts with (or
+exactly matches) any entry in the list above.
+
+If **any** protected files are modified:
+
+1. **Insufficient context** — the PR has no linked issue, or the PR
+   description does not explain why the protected files are being
+   changed: raise a **high** finding with category `protected-path`.
+   The description MUST list the affected protected files and note
+   that the PR lacks justification for modifying governance or
+   infrastructure files.
+
+2. **Sufficient context** — the PR links to an issue and the
+   description explains the rationale for the change: raise a
+   **medium** finding with category `protected-path`. The description
+   MUST list the affected protected files and note that human
+   approval is always required for protected-path changes, regardless
+   of context.
+
+In either case, the presence of a `protected-path` finding at high or
+medium severity means the outcome MUST NOT be `approve`.
+
+- For high severity, the finding MUST be `request-changes`
+- For medium severity (with sufficient context), the finding MUST be
+  `comment-only`
+
+The `post-review.sh` script independently downgrades approvals on
+protected-path PRs, but the review agent should surface the finding
+proactively so human reviewers understand what requires their
+attention.
+
+If no protected files are modified, do not add a `protected-path`
+finding.
+
 Merge any new findings into the findings list from steps 3 and 4,
 and re-evaluate the overall outcome.
 
@@ -362,6 +416,8 @@ wins.
 - **Never approve with unresolved critical or high findings.** If any
   critical or high finding exists, the outcome must be
   `request-changes`.
+- **Never approve when any protected-path finding exists**, regardless of
+  severity
 - **Never post without completing the `code-review` and `docs-review`
   skills first.** Partial reviews miss context and produce unreliable
   verdicts.
