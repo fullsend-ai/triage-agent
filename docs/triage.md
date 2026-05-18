@@ -47,23 +47,18 @@ The `issue-labels` skill may also apply contextual labels (e.g., `area/api`,
 
 ## Configuration and extension
 
-Detailed harness-level customization is coming soon. Today, the best way to
-influence how the triage agent behaves on your repository is by adding
-instructions and skills to the repo itself. See
-[Customizing Agents with Skills](../guides/user/customizing-with-skills.md).
-
 ### Example: Customizing the issue-labels skill
 
-The triage agent includes an OOTB `issue-labels` skill that discovers your
+The triage agent includes a built-in `issue-labels` skill that discovers your
 repo's labels and applies them opportunistically during triage. You can replace
 it with your own version to encode your team's labeling knowledge directly in
-the skill, keeping it out of `CLAUDE.md` (where it would bloat context for
+the skill, keeping it out of `AGENTS.md` (where it would bloat context for
 every agent).
 
-To shadow the OOTB skill, create your own `issue-labels` skill in
+To overload the built-in skill, create your own `issue-labels` skill in
 `.agents/skills/issue-labels/SKILL.md` and symlink `.claude/skills` to
 `.agents/skills` so it's discoverable by both fullsend and local agent tooling.
-You can also shadow it at the org level in your `.fullsend` config repo at
+You can also overload it at the org level in your `.fullsend` config repo at
 `customized/skills/issue-labels/SKILL.md`. At runtime, your version replaces
 the upstream default — no other configuration needed.
 
@@ -125,7 +120,7 @@ Include recommendations in `label_actions`:
 
 This gives the triage agent the subtlety it needs to distinguish between
 `kind/bug` and `kind/flaky-test`, or to know that `area/operator` applies to
-controller-runtime code, without adding label documentation to `CLAUDE.md`
+controller-runtime code, without adding label documentation to `AGENTS.md`
 where every agent would pay the context cost.
 
 ## Source
