@@ -28,8 +28,16 @@ _output_file="${FULLSEND_OUTPUT_FILE:-agent-result.json}"
 _output_file="$(basename "${_output_file}")"
 RESULT_FILE="${OUTPUT_DIR}/${_output_file}"
 if [[ ! -f "${RESULT_FILE}" ]]; then
-  echo "FAIL: ${RESULT_FILE} not found"
-  exit 1
+  # Agents sometimes write "result.json" instead of "agent-result.json".
+  # Accept the common variant rather than burning a full retry iteration.
+  _fallback="${OUTPUT_DIR}/result.json"
+  if [[ "${_output_file}" == "agent-result.json" && -f "${_fallback}" ]]; then
+    echo "WARN: expected ${RESULT_FILE} but found ${_fallback} — using fallback"
+    RESULT_FILE="${_fallback}"
+  else
+    echo "FAIL: ${RESULT_FILE} not found"
+    exit 1
+  fi
 fi
 echo "Validating: ${RESULT_FILE} against ${FULLSEND_OUTPUT_SCHEMA}"
 
