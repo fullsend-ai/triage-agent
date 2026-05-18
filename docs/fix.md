@@ -50,10 +50,8 @@ Remove the label or use `/fs-fix` to re-engage.
 
 ## Configuration and extension
 
-Detailed harness-level customization is coming soon. Today, the best way to
-influence how the fix agent behaves on your repository is by adding
-instructions and skills to the repo itself. See
-[Customizing Agents with Skills](../guides/user/customizing-with-skills.md).
+See [Customizing with AGENTS.md](../guides/user/customizing-with-agents-md.md) and
+[Customizing with Skills](../guides/user/customizing-with-skills.md).
 
 ## Source
 

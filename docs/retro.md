@@ -13,7 +13,7 @@ The retro agent is triggered after a workflow completes (PR merged or closed), o
 3. **Validation loop** — output is checked against a schema, with up to 2 retries.
 4. **Post-script** creates GitHub issues from the agent's proposals.
 
-When triggered via `/fs-retro`, the human's comment is passed as `RETRO_COMMENT` — the agent treats this as high-signal direction about what to focus on.
+When triggered via `/fs-retro`, the human's comment is passed to the agent as high-signal direction about what to focus on.
 
 ## How it helps
 
@@ -45,10 +45,8 @@ then enter the normal [triage](triage.md)/[prioritize](prioritize.md) pipeline.
 
 ## Configuration and extension
 
-Detailed harness-level customization is coming soon. Today, the best way to
-influence how the retro agent behaves on your repository is by adding
-instructions and skills to the repo itself. See
-[Customizing Agents with Skills](../guides/user/customizing-with-skills.md).
+See [Customizing with AGENTS.md](../guides/user/customizing-with-agents-md.md) and
+[Customizing with Skills](../guides/user/customizing-with-skills.md).
 
 ## Source
 

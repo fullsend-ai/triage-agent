@@ -34,11 +34,6 @@ project board directly.
 
 ## Configuration and extension
 
-Detailed harness-level customization is coming soon. Today, the best way to
-influence how the prioritize agent behaves on your repository is by adding
-instructions and skills to the repo itself. See
-[Customizing Agents with Skills](../guides/user/customizing-with-skills.md).
-
 ### Example: Providing a customer-research skill
 
 The prioritize agent looks for a `customer-research` skill and, when available,

@@ -1,6 +1,6 @@
 # Code Agent
 
-<img src="icons/coder.png" alt="Code agent icon" width="80">
+![Code agent icon](icons/coder.png)
 
 Implementation specialist that reads triaged GitHub issues, implements fixes or features following repository conventions, runs tests and linters, and commits to a local feature branch.
 
@@ -8,9 +8,9 @@ Implementation specialist that reads triaged GitHub issues, implements fixes or 
 
 The code agent follows a three-phase pipeline: pre-script, sandbox execution, post-script.
 
-1. **Pre-script** validates inputs on the runner before sandbox creation.
-2. **Sandbox** — the agent reads the issue, explores the codebase, writes code, runs tests and linters, and commits locally. It has no network access to push or create PRs (enforced by `disallowedTools`).
-3. **Post-script** runs on the runner with elevated permissions: it performs protected-path checks, secret scanning, pushes the branch, and creates the PR.
+1. **Pre-script** validates inputs on the runner before sandbox creation. It also checks for open PRs linked to the issue.
+2. **Sandbox** — the agent reads the issue, explores the codebase, writes code, runs tests and linters, and commits locally. It has no network access (enforced by OpenShell).
+3. **Post-script** runs on the runner: it performs protected path checks, secret scanning, pre-commit checks, pushes the branch, and creates the PR.
 
 This separation ensures the agent never has direct write access to the repository.
 
@@ -26,8 +26,8 @@ This separation ensures the agent never has direct write access to the repositor
 |---------|-------|--------|
 | `/fs-code` | Issue comment | Triggers the code agent on the issue |
 
-The `/fs-code` command does not accept arguments. It can only be used on issues
-(not PRs). The code agent is also triggered automatically when the
+The `/fs-code` command accepts an optional `--force` flag. It can only be used
+on issues (not PRs). The code agent is also triggered automatically when the
 `ready-to-code` label is applied to an issue.
 
 ## Control labels
@@ -38,10 +38,8 @@ The `/fs-code` command does not accept arguments. It can only be used on issues
 
 ## Configuration and extension
 
-Detailed harness-level customization is coming soon. Today, the best way to
-influence how the code agent behaves on your repository is by adding
-instructions and skills to the repo itself. See
-[Customizing Agents with Skills](../guides/user/customizing-with-skills.md).
+See [Customizing with AGENTS.md](../guides/user/customizing-with-agents-md.md) and
+[Customizing with Skills](../guides/user/customizing-with-skills.md).
 
 ## Source
 
