@@ -118,6 +118,16 @@ describes the schema. The post-script reads this file to post a summary
 comment on the PR. Without this file, the post-script cannot communicate
 your work back to the reviewer.
 
+After writing the file, validate it before exiting:
+
+```bash
+fullsend-check-output "${FULLSEND_OUTPUT_DIR}/fix-result.json"
+```
+
+If validation fails, read the error output, fix the JSON file, and
+re-run the check. If it still fails after 3 attempts, write the best
+JSON you have and exit.
+
 ## Failure handling
 
 Secret scanning is **non-negotiable**. The `scan-secrets` helper runs before

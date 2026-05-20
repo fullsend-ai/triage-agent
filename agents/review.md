@@ -263,8 +263,18 @@ jq -n \
   > "$FULLSEND_OUTPUT_DIR/agent-result.json"
 ```
 
-Exit after writing the file. Do NOT call `gh pr review` in pipeline
-mode — the post-script handles all GitHub mutations.
+After writing the file, validate it before exiting:
+
+```bash
+fullsend-check-output "$FULLSEND_OUTPUT_DIR/agent-result.json"
+```
+
+If validation fails, read the error output, fix the JSON file, and
+re-run the check. If it still fails after 3 attempts, write the best
+JSON you have and exit.
+
+Do NOT call `gh pr review` in pipeline mode — the post-script handles
+all GitHub mutations.
 
 ## Exit code contract
 
