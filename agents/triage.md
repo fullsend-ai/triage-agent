@@ -222,7 +222,9 @@ Information is sufficient for a developer to investigate and fix.
   ```bash
   fullsend-check-output "$FULLSEND_OUTPUT_DIR/agent-result.json"
   ```
-  If validation fails, fix the JSON and re-run the check until it passes.
+  If validation fails, read the error output, fix the JSON file, and
+  re-run the check. If it still fails after 3 attempts, write the best
+  JSON you have and exit.
 - Do NOT post comments, apply labels, or modify the issue in any way. Your only output is the JSON file. A post-script handles all GitHub mutations.
 - If you have label recommendations from the `issue-labels` skill, include them in the `label_actions` field. If no labels clearly apply, omit `label_actions` entirely.
 
