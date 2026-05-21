@@ -2,7 +2,7 @@
 
 <img src="icons/triage.png" alt="Triage agent icon" width="80">
 
-Inspects a GitHub issue, assesses information sufficiency, and produces a structured triage decision that determines whether the issue is ready for implementation.
+Inspects a GitHub issue, assesses information sufficiency, asks clarifying questions when needed, and produces a structured triage decision that determines whether the issue is ready for implementation.
 
 ## How the agent works
 
@@ -20,7 +20,7 @@ The agent runs in a read-only sandbox. It cannot modify issues, push code, or in
 
 | Command | Where | Effect |
 |---------|-------|--------|
-| `/fs-triage` | Issue comment | Re-runs triage on the issue |
+| `/fs-triage` | Issue comment | Runs triage on the issue |
 
 The `/fs-triage` command does not accept arguments — it re-evaluates the issue
 from scratch using current content and comments.
@@ -31,7 +31,7 @@ re-evaluate after the reporter provides clarification).
 
 ## Control labels
 
-These labels are managed by the triage pipeline. The agent decides the triage
+These labels are managed by the triage agent. It decides the triage
 outcome and the post-script applies the corresponding label.
 
 | Label | Meaning |
@@ -47,7 +47,7 @@ The `issue-labels` skill may also apply contextual labels (e.g., `area/api`,
 
 ## Configuration and extension
 
-### Example: Customizing the issue-labels skill
+### Skill: `issue-labels`
 
 The triage agent includes a built-in `issue-labels` skill that discovers your
 repo's labels and applies them opportunistically during triage. You can replace
