@@ -65,17 +65,17 @@ network_policies:
         port: 443
         protocol: rest
         enforcement: enforce
-        access: read-write
+        access: read-only
       - host: "objects.githubusercontent.com"
         port: 443
         protocol: rest
         enforcement: enforce
-        access: read-write
+        access: read-only
       - host: "release-assets.githubusercontent.com"
         port: 443
         protocol: rest
         enforcement: enforce
-        access: read-write
+        access: read-only
     binaries:
       - path: "**/pre-commit"
 
@@ -86,37 +86,37 @@ network_policies:
         port: 443
         protocol: rest
         enforcement: enforce
-        access: read-write
+        access: read-only
       - host: "registry.yarnpkg.com"
         port: 443
         protocol: rest
         enforcement: enforce
-        access: read-write
+        access: read-only
       - host: "pypi.org"
         port: 443
         protocol: rest
         enforcement: enforce
-        access: read-write
+        access: read-only
       - host: "files.pythonhosted.org"
         port: 443
         protocol: rest
         enforcement: enforce
-        access: read-write
+        access: read-only
       - host: "proxy.golang.org"
         port: 443
         protocol: rest
         enforcement: enforce
-        access: read-write
+        access: read-only
       - host: "sum.golang.org"
         port: 443
         protocol: rest
         enforcement: enforce
-        access: read-write
+        access: read-only
       - host: "storage.googleapis.com"
         port: 443
         protocol: rest
         enforcement: enforce
-        access: read-write
+        access: read-only
     binaries:
       - path: "**/npm"
       - path: "**/npx"
