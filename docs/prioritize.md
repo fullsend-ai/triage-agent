@@ -6,7 +6,9 @@ Scores a GitHub issue using the RICE framework (Reach, Impact, Confidence, Effor
 
 ## How the agent works
 
-The prioritize agent is triggered after triage. It fetches the issue and all its context, then evaluates it across the four RICE dimensions. It can invoke customer-research skills to gather additional signal about reach and impact. The output is a structured JSON result with per-dimension scores and written reasoning, which the post-script uses to update the project board.
+Triggered on a schedule (the prioritize scheduler polls the project board for unscored or stale issues) or on-demand via `/fs-prioritize`.
+
+The prioritize agent fetches the issue and all its context, then evaluates it across the four RICE dimensions. It can invoke customer-research skills to gather additional signal about reach and impact. The output is a structured JSON result with per-dimension scores and written reasoning, which the post-script uses to update the project board.
 
 The agent runs in a read-only sandbox. It cannot modify issues or push code — it only produces a scored result.
 
