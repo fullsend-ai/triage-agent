@@ -235,11 +235,14 @@ fi
 # --- Post comment ---
 
 echo "Posting comment..."
-if [[ "${ACTION}" == "blocked" ]]; then
-  # Blocked uses plain gh issue comment (no marker-based upsert).
-  printf '%s' "${COMMENT}" | gh issue comment "${ISSUE_NUMBER}" --repo "${REPO}" --body-file -
-else
+if [[ "${ACTION}" == "sufficient" ]]; then
+  # Summaries use sticky comments — there's one logical summary per issue and
+  # updating it in-place avoids flooding. See #602.
   printf '%s' "${COMMENT}" | fullsend post-comment --repo "${REPO}" --number "${ISSUE_NUMBER}" --marker "<!-- fullsend:triage-agent -->" --token "${GH_TOKEN}" --result -
+else
+  # Interactive comments (needs-info questions, blocked notices, duplicates)
+  # post as new comments so the conversation reads chronologically.
+  printf '%s' "${COMMENT}" | gh issue comment "${ISSUE_NUMBER}" --repo "${REPO}" --body-file -
 fi
 
 # --- Post-action: close duplicate issues ---

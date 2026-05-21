@@ -125,6 +125,10 @@ run_test_stdout() {
 
 # --- Test cases ---
 
+run_test "insufficient-uses-plain-comment" \
+  '{"action":"insufficient","reasoning":"missing repro","clarity_scores":{"symptom":0.6,"cause":0.3,"reproduction":0.1,"impact":0.5,"overall":0.39},"comment":"Could you share the exact steps to reproduce this?"}' \
+  "gh issue comment 42 --repo test-org/test-repo --body-file -"
+
 run_test "insufficient-posts-comment-and-labels" \
   '{"action":"insufficient","reasoning":"missing repro","clarity_scores":{"symptom":0.6,"cause":0.3,"reproduction":0.1,"impact":0.5,"overall":0.39},"comment":"Could you share the exact steps to reproduce this?"}' \
   "gh api repos/test-org/test-repo/issues/42/labels -f labels[]=needs-info --silent"
