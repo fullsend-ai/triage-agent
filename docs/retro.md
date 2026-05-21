@@ -9,7 +9,7 @@ Performs retrospectives on agent workflows — analyzes what happened, identifie
 The retro agent is triggered after a workflow completes (PR merged or closed), or on-demand via `/fs-retro`. It reconstructs the full workflow graph — [triage](triage.md), [code](code.md), [review](review.md), [fix](fix.md), and human interactions — by fetching issue and PR timelines, agent run logs, and review threads.
 
 1. **Pre-script** gathers metadata about the originating PR or issue.
-2. **Sandbox** — the agent reads the full workflow history, identifies patterns (wasted cycles, missed context, repeated failures), and writes structured proposals. It uses the retro-analysis and finding-agent-runs skills. The agent is read-only — it cannot write files or edit code in the target repo.
+2. **Sandbox** — the agent reads the full workflow history, identifies patterns (wasted cycles, missed context, repeated failures), and writes structured proposals. It uses the retro-analysis and finding-agent-runs skills. The agent cannot write files or edit code in the target repo.
 3. **Validation loop** — output is checked against a schema, with up to 2 retries.
 4. **Post-script** creates GitHub issues from the agent's proposals.
 
@@ -39,9 +39,7 @@ The retro agent also runs automatically when a PR is closed (merged or not).
 
 ## Control labels
 
-The retro agent does not apply or consume control labels. Its output is
-structured proposals that the post-script files as new GitHub issues, which
-then enter the normal [triage](triage.md)/[prioritize](prioritize.md) pipeline.
+The retro agent does not apply or consume control labels.
 
 ## Configuration and extension
 

@@ -10,7 +10,8 @@ The review agent is triggered when a PR is opened or updated. It follows the sam
 
 1. **Pre-script** validates inputs and fetches PR metadata.
 2. **Sandbox** — the agent reads the PR diff, the linked issue (if any), and the surrounding codebase. It applies three review skills (code-review, pr-review, docs-review) to evaluate the change across multiple dimensions. It produces a structured JSON review result. The agent cannot push files, edit code, or push — it is strictly read-only.
-3. **Post-script** posts the review on the PR using a dedicated review token.
+3. **Validation loop** — the output is checked against a schema, with up to 2 retry iterations if the output is malformed.
+4. **Post-script** posts the review on the PR.
 
 If a prior review exists (e.g., re-review after fixes), it is injected into the sandbox so the agent can assess whether previous findings were addressed.
 
@@ -36,6 +37,7 @@ These labels are applied by the review post-script based on the review outcome.
 
 | Label | Meaning |
 |-------|---------|
+| `ready-for-review` | Signals the review agent to evaluate the PR. Applied by the [code agent](code.md) post-script. |
 | `ready-for-merge` | The review agent approved the PR. No blocking findings. |
 | `requires-manual-review` | The review agent found issues that require human judgment — it could not confidently approve or reject. |
 | `rejected` | The review agent rejected the PR and the post-script closed it. |
