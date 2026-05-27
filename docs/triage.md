@@ -23,7 +23,7 @@ The agent runs in a read-only sandbox. It cannot modify issues, push code, or in
 | `/fs-triage` | Issue comment | Runs triage on the issue |
 
 The `/fs-triage` command does not accept arguments — it re-evaluates the issue
-from scratch using current content and comments.
+using current content, comments, and any prior triage analysis.
 
 Triage also runs automatically when a new issue is opened, when an issue is
 edited, and when someone comments on an issue labeled `needs-info` (to
