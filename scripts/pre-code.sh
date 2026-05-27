@@ -66,8 +66,8 @@ if [[ "${CODE_FORCE:-}" == "true" ]]; then
   exit 0
 fi
 
-BOT_LOGIN="${FULLSEND_BOT_LOGIN:-fullsend-ai[bot]}"
-CODER_BOT_LOGIN="${FULLSEND_CODER_BOT_LOGIN:-fullsend-ai-coder[bot]}"
+BOT_LOGIN="fullsend-ai[bot]"
+CODER_BOT_LOGIN="fullsend-ai-coder[bot]"
 
 echo "Checking for existing open PRs linked to issue #${ISSUE_NUMBER}..."
 
