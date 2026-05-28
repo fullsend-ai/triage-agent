@@ -265,7 +265,7 @@ run_test_output() {
   if [[ -n "${expect_output}" ]] && ! grep -qF "${expect_output}" "${TMPDIR}/stdout.log"; then
     echo "FAIL: ${test_name} — expected output to contain: ${expect_output}"
     echo "  actual output:"
-    cat "${TMPDIR}/stdout.log" | head -10
+    head -10 "${TMPDIR}/stdout.log"
     passed=false
   fi
 
