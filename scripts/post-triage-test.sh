@@ -58,7 +58,7 @@ run_test() {
   echo "${json_content}" > "${run_dir}/iteration-1/output/agent-result.json"
 
   # Clear gh call log.
-  > "${GH_LOG}"
+  : > "${GH_LOG}"
 
   # Run the post-script.
   local exit_code=0
@@ -100,7 +100,7 @@ run_test_stdout() {
   local run_dir="${TMPDIR}/run-${test_name}"
   mkdir -p "${run_dir}/iteration-1/output"
   echo "${json_content}" > "${run_dir}/iteration-1/output/agent-result.json"
-  > "${GH_LOG}"
+  : > "${GH_LOG}"
 
   local exit_code=0
   (cd "${run_dir}" && bash "${POST_SCRIPT}") > "${TMPDIR}/stdout.log" 2>&1 || exit_code=$?
@@ -282,7 +282,7 @@ run_test_no_pattern() {
   local run_dir="${TMPDIR}/run-${test_name}"
   mkdir -p "${run_dir}/iteration-1/output"
   echo "${json_content}" > "${run_dir}/iteration-1/output/agent-result.json"
-  > "${GH_LOG}"
+  : > "${GH_LOG}"
 
   local exit_code=0
   (cd "${run_dir}" && bash "${POST_SCRIPT}") > "${TMPDIR}/stdout.log" 2>&1 || exit_code=$?
