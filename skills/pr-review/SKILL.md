@@ -45,6 +45,7 @@ and `description`.
 | `style-conventions`    | sonnet | Naming, error handling idioms, API shape, code organization                    |
 | `docs-currency`        | sonnet | Documentation staleness (follows docs-review skill inline)                     |
 | `cross-repo-contracts` | sonnet | API contract breakage affecting other repos (conditional)                      |
+| `challenger`           | opus   | Adversarial challenge of findings, false-positive removal, deduplication       |
 
 The Model column reflects each sub-agent's current frontmatter. Any
 value accepted by the Agent tool's `model` parameter is valid in
@@ -529,16 +530,76 @@ attention.
 If no protected files are modified, do not add a `protected-path`
 finding.
 
-#### 6e. Challenger pass
+#### 6e. Challenger pass (dedicated sub-agent)
 
-This is the verification round. You need to act as an isolated verifier
-who challenges findings against actual code. *Use the source*.
+After steps 6a–6d produce a merged finding set, dispatch the
+`challenger` sub-agent to adversarially challenge the findings with
+fresh context. The challenger has not seen the orchestrator's synthesis
+— it receives only the raw findings and the diff, preserving context
+isolation.
 
-This is an adversarial pass. Your job is to debunk and discredit
-questionable review findings.
+1. Read `sub-agents/challenger.md` for the sub-agent definition
+2. Compose the spawn prompt from:
 
-e.g. check whether the code already handles something which the review
-finding says is missing (e.g., "the nil check exists 3 lines above")
+   **Part 1 — Sub-agent definition:** the full markdown body of the
+   challenger sub-agent file (everything after the frontmatter)
+
+   **Part 2 — Meta-prompt:** Read `meta-prompt.md`, fill in the "You
+   are reviewing PR" template, and include everything else verbatim
+
+   **Part 3 — Context package:** the merged finding set from steps
+   6a–6d (as a JSON array), plus the full PR diff and changed files
+   list. Format as:
+
+   ```markdown
+   ## Context
+
+   ### Findings to challenge
+   <JSON array of all findings from steps 6a–6d>
+
+   ### Diff
+   <diff content>
+
+   ### Changed files
+   <file list>
+
+   ### PR metadata
+   <title, body, author, labels>
+   ```
+
+   **Part 4 — Dispatch guard flag:**
+
+   ```markdown
+   REVIEW_SUB_AGENT_TRUE
+   ```
+
+3. Spawn via Agent tool with:
+   - `model`: from the challenger sub-agent frontmatter (`opus`)
+   - `subagent_type`: `Explore` (read-only)
+   - `prompt`: composed from parts 1–4
+
+   The challenger runs **after** dimension sub-agents complete (it
+   needs their findings as input), so it is dispatched sequentially,
+   not in the parallel batch from step 4.
+
+4. Consume the challenger's output. Replace the merged finding set
+   with the challenger's `adjudicated_findings`. Log any
+   `removed_findings` for transparency but do not include them in
+   the final review.
+
+5. If the challenger sub-agent fails (timeout, error, empty
+   response), fall back to using the pre-challenger merged finding
+   set from steps 6a–6d. Record an **info**-level finding:
+
+   ```json
+   {
+     "severity": "info",
+     "category": "sub-agent-failure",
+     "file": "N/A",
+     "description": "The challenger sub-agent did not return findings: <reason>. Using pre-challenger finding set.",
+     "actionable": false
+   }
+   ```
 
 #### 6f. Determine overall outcome
 
