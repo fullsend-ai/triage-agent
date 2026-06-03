@@ -6,7 +6,7 @@
 #
 # Required env vars:
 #   ORIGINATING_URL — HTML URL of the originating PR or issue
-#   GH_TOKEN        — GitHub token with issues:write scope (no pull_requests:write needed)
+#   GH_TOKEN        — GitHub token with issues:write and pull_requests:write scope
 #
 # The agent writes its result to output/agent-result.json (relative to
 # the iteration directory). This script finds the most recent iteration's output.
@@ -108,9 +108,9 @@ for i in $(seq 0 $((PROPOSAL_COUNT - 1))); do
 done
 
 # Post summary comment on the originating PR/issue.
-# Uses REST API (not gh issue comment) because the GraphQL addComment mutation
-# requires pull_requests:write for PRs. The REST issues endpoint only needs
-# issues:write, which the retro role already has.
+# Uses REST API (not gh issue comment) for consistency. Note: despite being
+# an "issues" endpoint, GitHub requires pull_requests:write when the target
+# number is a PR. See https://github.com/orgs/community/discussions/26644
 SUMMARY=$(jq -r '.summary // empty' "${RESULT_FILE}")
 if [[ -z "${SUMMARY}" ]]; then
   echo "ERROR: .summary is missing or empty in agent result"
