@@ -37,15 +37,15 @@ Sub-agent definitions live in `sub-agents/` relative to this file.
 Each is a markdown file with frontmatter specifying `name`, `model`,
 and `description`.
 
-| Sub-agent              | Model  | Dimension                                                                      |
-|------------------------|--------|--------------------------------------------------------------------------------|
-| `correctness`          | opus   | Logic errors, edge cases, nil handling, API contracts, test adequacy/integrity |
-| `security`             | opus   | Auth, data exposure, privilege escalation, injection defense, content security |
-| `intent-coherence`     | sonnet | Authorization, scope, tier matching, architectural fit, design coherence       |
-| `style-conventions`    | sonnet | Naming, error handling idioms, API shape, code organization                    |
-| `docs-currency`        | sonnet | Documentation staleness (follows docs-review skill inline)                     |
-| `cross-repo-contracts` | sonnet | API contract breakage affecting other repos (conditional)                      |
-| `challenger`           | opus   | Adversarial challenge of findings, false-positive removal, deduplication       |
+| Sub-agent              | Model  | Dispatch   | Dimension                                                                      |
+|------------------------|--------|------------|--------------------------------------------------------------------------------|
+| `correctness`          | opus   | parallel   | Logic errors, edge cases, nil handling, API contracts, test adequacy/integrity |
+| `security`             | opus   | parallel   | Auth, data exposure, privilege escalation, injection defense, content security |
+| `intent-coherence`     | sonnet | parallel   | Authorization, scope, tier matching, architectural fit, design coherence       |
+| `style-conventions`    | sonnet | parallel   | Naming, error handling idioms, API shape, code organization                    |
+| `docs-currency`        | sonnet | parallel   | Documentation staleness (follows docs-review skill inline)                     |
+| `cross-repo-contracts` | sonnet | parallel   | API contract breakage affecting other repos (conditional)                      |
+| `challenger`           | opus   | sequential | Adversarial challenge of findings, false-positive removal, deduplication       |
 
 The Model column reflects each sub-agent's current frontmatter. Any
 value accepted by the Agent tool's `model` parameter is valid in
@@ -497,14 +497,36 @@ isolation.
    - `subagent_type`: `Explore` (read-only)
    - `prompt`: composed from parts 1–4
 
+   **Prompt size guard:** If the combined context package (findings
+   JSON + diff + file list + PR metadata) exceeds 80 000 tokens,
+   truncate the diff to the files referenced by findings only. If it
+   still exceeds the limit, omit the full diff and include only the
+   hunks that correspond to finding line ranges. The challenger can
+   read full files via the `Read` tool if it needs broader context.
+
    The challenger runs **after** dimension sub-agents complete (it
    needs their findings as input), so it is dispatched sequentially,
    not in the parallel batch from step 4.
 
-4. Consume the challenger's output. Replace the merged finding set
-   with the challenger's `adjudicated_findings`. Log any
-   `removed_findings` for transparency but do not include them in
-   the final review.
+4. Consume the challenger's output. The challenger returns a **different
+   format** from dimension sub-agents: an object with
+   `adjudicated_findings` and `removed_findings` arrays (not a flat
+   finding array). Parse accordingly:
+
+   - Extract the `adjudicated_findings` array from the challenger's
+     JSON output. Strip the challenger-specific fields
+     (`challenger_action`, `challenger_reason`) before merging into the
+     review finding set — these are logged for transparency but are not
+     part of the standard finding schema.
+   - If `adjudicated_findings` is empty but the pre-challenger finding
+     set was non-empty, treat this as a challenger failure (fall back
+     per step 5 below). A legitimate challenger pass that removes all
+     findings is unlikely — an empty result more likely indicates a
+     parsing error or context truncation.
+   - Otherwise, replace the merged finding set with the challenger's
+     `adjudicated_findings`.
+   - Log any `removed_findings` for transparency but do not include
+     them in the final review.
 
 5. If the challenger sub-agent fails (timeout, error, empty
    response), fall back to using the pre-challenger merged finding
