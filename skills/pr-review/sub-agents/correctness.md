@@ -35,7 +35,7 @@ or inter-component contract in the diff:
 
 ### Technical documentation with correctness surface area
 
-Not all documentation is prose. Files under `docs/plans/`, and any
+Not all documentation is prose. Any
 document containing algorithm descriptions, pseudocode, data structure
 definitions, type specifications, CLI flag semantics, or API behavior
 claims, have **correctness surface area** — even when no production code
