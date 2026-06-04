@@ -19,15 +19,28 @@ not from general best practices.
 
 Before exploring context files, assess the diff size and nature.
 
-**Trivial diffs (under 10 changed lines, single concern):**
+**Trivial diffs (under 20 changed lines, single concern):**
 
 - Read only the changed files plus at most 3 sibling files in the same
   directory.
-- Do not read CI scripts, workflow files, Makefiles, or shell scripts
-  unless the diff itself modifies them.
+- Do not read files outside the directories containing changed files.
+  A YAML config change does not require reading Go, Python, or other
+  source files elsewhere in the repo.
+- Do not run shell pipelines (`awk`, `sed`, `grep`, `wc`) for
+  whitespace, indentation, or formatting analysis. The diff context
+  provides sufficient information.
+- Do not run `git log` or `git blame` searches. Commit history is not
+  needed to evaluate style on a small change.
 - Aim for under 10 tool calls total.
 
-**Non-trivial diffs (10+ changed lines or multiple concerns):**
+**Value-only diffs (any size, only values change — not structure):**
+
+If the diff changes only values (hashes, versions, URLs, feature flags)
+without adding, removing, or restructuring lines, verify the changed
+values follow the same pattern as their surrounding context in the diff.
+Report no findings if they do. Do not read additional files.
+
+**Non-trivial diffs (20+ changed lines or multiple concerns):**
 
 - Read 3-5 existing files in the same package/directory as the changed
   files to extract the established patterns before evaluating.
