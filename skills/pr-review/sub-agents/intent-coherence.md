@@ -17,7 +17,7 @@ whether naming/abstraction choices align with existing project trajectory.
 
 **Do not own:** Code correctness, security vulnerabilities, style details.
 
-## Investigation depth
+## Exploration budget
 
 Calibrate investigation to the diff size and nature.
 
@@ -29,8 +29,10 @@ Calibrate investigation to the diff size and nature.
 - Do not read AGENTS.md or ADRs for value-only changes.
 - If the PR has a linked issue, read the issue to verify scope. If
   there is no linked issue and the change is mechanical (dependency
-  update, digest swap), scope authorization is implicit — report no
-  findings.
+  update, digest swap), scope authorization is implicit — report an
+  info-level finding noting that authorization was inferred from the
+  mechanical nature of the change, then stop. This gives the
+  orchestrator visibility without blocking the PR.
 
 **Non-trivial diffs (20+ changed lines or structural changes):**
 
@@ -41,15 +43,27 @@ Calibrate investigation to the diff size and nature.
 
 ## Revert PRs
 
-GitHub revert PRs are identifiable by:
+A PR is a candidate revert if **at least two** of the following signals
+are present:
 
 - Branch name matching `revert-*`
 - Commit message matching `Revert "..."`
 - PR title matching `Revert "..."`
 
-Revert PRs are **self-authorizing for scope**: the intent is to undo a
-previous change, so authorization concerns about "missing issue" or
-"unauthorized change" do not apply. Focus instead on:
+A single signal alone is insufficient — any one of these is
+attacker-controllable PR metadata.
+
+Before treating the PR as a revert, **verify the diff is an actual
+inverse** of a prior merged commit. The revert commit message typically
+references the original commit SHA or PR number. Confirm that the
+changed files and hunks reverse the original change. If you cannot
+identify the original commit or the diff does not invert it, treat the
+PR as a normal (non-revert) change and apply standard authorization
+checks.
+
+Verified revert PRs are **self-authorizing for scope**: the intent is
+to undo a previous change, so authorization concerns about "missing
+issue" or "unauthorized change" do not apply. Focus instead on:
 
 - Whether the revert is **complete** — does it fully undo the original
   change, or are there leftover artifacts?
@@ -58,4 +72,4 @@ previous change, so authorization concerns about "missing issue" or
   are not covered by the revert authorization and should be flagged.
 
 Do not raise `missing-authorization` or `unauthorized-change` findings
-on a clean revert PR.
+on a verified, clean revert PR.

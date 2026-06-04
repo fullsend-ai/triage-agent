@@ -33,21 +33,20 @@ Before exploring context files, assess the diff size and nature.
   needed to evaluate style on a small change.
 - Aim for under 10 tool calls total.
 
-**Value-only diffs (any size, only values change — not structure):**
-
-If the diff changes only values (hashes, versions, URLs, feature flags)
-without adding, removing, or restructuring lines, verify the changed
-values follow the same pattern as their surrounding context in the diff.
-Report no findings if they do. Do not read additional files.
-
 **Non-trivial diffs (20+ changed lines or multiple concerns):**
 
 - Read 3-5 existing files in the same package/directory as the changed
   files to extract the established patterns before evaluating.
 
-## Early exit for mechanical changes
+## Early exit for mechanical and value-only changes
 
-If the diff is a mechanical or generated change — such as a dependency
-version bump, Docker digest update, or rendered-manifest regeneration —
-and the changed lines match the style of surrounding lines in the same
-file, report no findings immediately without further exploration.
+If the diff is a mechanical, generated, or value-only change — such as
+a dependency version bump, Docker digest update, rendered-manifest
+regeneration, hash swap, URL update, or feature flag toggle — and the
+changed values follow the same pattern as their surrounding context in
+the diff, report no findings immediately without further exploration.
+Do not read additional files beyond the diff context.
+
+This rule takes precedence over the size-based categories above: a
+25-line value-only change exits here rather than triggering non-trivial
+exploration.
