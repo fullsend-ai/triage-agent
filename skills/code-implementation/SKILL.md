@@ -641,10 +641,10 @@ Hard-wrap guidelines when a limit is configured:
 - `Closes #N` and similar trailers: keep on one line
 - **`Signed-off-by:`** — do NOT use `git commit -s`. The DCO is a
   human attestation of personhood and legal authority to contribute.
-  An agent cannot meaningfully certify those conditions. Agent commits
-  use the GitHub App bot identity, which the DCO app auto-exempts.
-  The human who merges the PR accepts responsibility for the
-  contribution
+  No human is present to make that certification in an autonomous
+  agent session. Your commits use the GitHub App bot identity, which
+  the DCO app auto-exempts. The human who merges the PR accepts
+  responsibility for the contribution
 
 The commit body should:
 - Explain **what** changed and **why** (not just "fix bug")
