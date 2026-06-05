@@ -124,13 +124,36 @@ if [ -z "${CHANGED_FILES}" ] && [ "${NO_PUSH}" = "false" ]; then
   NO_PUSH=true
 fi
 
+# Compute the branch's net changes relative to the target branch using
+# merge-base. After a rebase, PRE_AGENT_HEAD..HEAD includes upstream
+# changes (the rebase rewrites history so the old SHA is no longer an
+# ancestor). The merge-base diff isolates only what the branch itself
+# contributes — the same diff that will appear in the PR.
+# Falls back to CHANGED_FILES if merge-base cannot be computed (e.g.,
+# shallow clone or missing remote ref).
+MERGE_BASE="$(git merge-base HEAD "origin/${TARGET_BRANCH}" 2>/dev/null || true)"
+if [ -n "${MERGE_BASE}" ]; then
+  BRANCH_CHANGED_FILES="$(git diff --name-only "${MERGE_BASE}..HEAD" 2>/dev/null || true)"
+else
+  BRANCH_CHANGED_FILES="${CHANGED_FILES}"
+fi
+
 # ---------------------------------------------------------------------------
 # 1. Protected-path check (only if pushing)
 # ---------------------------------------------------------------------------
 if [ "${NO_PUSH}" = "false" ]; then
-  echo "Changed files:"
+  echo "Changed files (agent commits):"
   echo "${CHANGED_FILES}" | sed 's/^/  /'
 
+  if [ "${BRANCH_CHANGED_FILES}" != "${CHANGED_FILES}" ]; then
+    echo "Branch-only changed files (merge-base-aware, used for protected-path check):"
+    echo "${BRANCH_CHANGED_FILES}" | sed 's/^/  /'
+  fi
+
+  # Use BRANCH_CHANGED_FILES for the protected-path check. This ensures
+  # that files changed only in upstream (e.g., .github/ workflows modified
+  # on main since the branch was created) are not falsely attributed to
+  # the agent after a rebase.
   while IFS= read -r file; do
     [ -z "${file}" ] && continue
     for pattern in "${PROTECTED_PATHS[@]}"; do
@@ -140,7 +163,7 @@ if [ "${NO_PUSH}" = "false" ]; then
         exit 1
       fi
     done
-  done <<< "${CHANGED_FILES}"
+  done <<< "${BRANCH_CHANGED_FILES}"
 
   echo "Protected-path check passed"
 fi
@@ -221,7 +244,7 @@ if [ "${NO_PUSH}" = "false" ] && [ -f .pre-commit-config.yaml ]; then
   fi
 
   if command -v pre-commit >/dev/null 2>&1; then
-    mapfile -t changed_array <<< "${CHANGED_FILES}"
+    mapfile -t changed_array <<< "${BRANCH_CHANGED_FILES}"
     if pre-commit run --files "${changed_array[@]}"; then
       echo "Pre-commit passed — all hooks clean"
     else
