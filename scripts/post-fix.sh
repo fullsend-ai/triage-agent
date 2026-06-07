@@ -129,13 +129,15 @@ fi
 # changes (the rebase rewrites history so the old SHA is no longer an
 # ancestor). The merge-base diff isolates only what the branch itself
 # contributes — the same diff that will appear in the PR.
-# Falls back to CHANGED_FILES if merge-base cannot be computed (e.g.,
-# shallow clone or missing remote ref).
-MERGE_BASE="$(git merge-base HEAD "origin/${TARGET_BRANCH}" 2>/dev/null || true)"
+# Fallback chain mirrors post-code.sh: warn, try origin/TARGET..HEAD,
+# then HEAD~1..HEAD. This keeps the two post-scripts aligned.
+MERGE_BASE="$(git merge-base "origin/${TARGET_BRANCH}" HEAD 2>/dev/null)" || MERGE_BASE=""
 if [ -n "${MERGE_BASE}" ]; then
-  BRANCH_CHANGED_FILES="$(git diff --name-only "${MERGE_BASE}..HEAD" 2>/dev/null || true)"
+  BRANCH_CHANGED_FILES="$(git diff --name-only "${MERGE_BASE}..HEAD")"
 else
-  BRANCH_CHANGED_FILES="${CHANGED_FILES}"
+  echo "::warning::Could not determine merge-base — trying origin/${TARGET_BRANCH}..HEAD"
+  BRANCH_CHANGED_FILES="$(git diff --name-only "origin/${TARGET_BRANCH}..HEAD" 2>/dev/null \
+    || git diff --name-only HEAD~1..HEAD 2>/dev/null || true)"
 fi
 
 # ---------------------------------------------------------------------------
