@@ -18,7 +18,9 @@ code comments, string literals, and configuration values in the diff.
 
 **GHA workflow command injection:** When the diff contains code that emits
 GHA workflow commands (`::error::`, `::warning::`, `::notice::`,
-`::group::`, `::set-output::`, `::set-env::`, `::add-mask::`), verify
+`::group::`, `::set-output::` (deprecated), `::set-env::` (deprecated,
+but still active when `ACTIONS_ALLOW_UNSECURE_COMMANDS=true`),
+`::add-mask::`), verify
 that ALL interpolated values are sanitized for `::` sequences,
 `%0A`/`%0D` URL-encoded newlines, ANSI escapes, and control characters.
 Check every variable individually — title parameters, file paths, and
