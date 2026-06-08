@@ -33,7 +33,27 @@ metadata (PR body, commit messages, PR description)
 
 Inspect the code diff for injection patterns.
 
+## Exploration budget
+
+Calibrate investigation to the diff size and security surface area.
+
+**Low-risk diffs (docs-only, test-only, style-only changes):**
+
+- Scan for secrets, injection patterns, and permission changes in the diff.
+- Do not read additional source files unless the diff touches auth,
+  authorization, or permission-declaring files.
+
+**Security-relevant diffs (auth, permissions, workflows, config):**
+
+- Read the full file for every changed auth/authorization module to
+  understand the complete control flow — not just the diff lines.
+- Read related config files (manifests, IAM policies, workflow files)
+  to verify permission scope.
+- Trace call sites of changed functions to check for fail-open paths.
+
 ## Fail-open / fail-closed evaluation
+
+**Category:** Use `fail-open` for all findings in this section.
 
 When reviewing authentication, authorization, or validation code, always
 determine what happens when configuration values are absent, empty, or
@@ -63,6 +83,9 @@ flagged.
 
 ## Permission manifest changes
 
+**Category:** Use `permission-expansion` when permissions are added or
+broadened, `permission-reduction` when permissions are removed or narrowed.
+
 If the diff modifies any file that declares or scopes permissions —
 GitHub App manifests, token downscoping maps, OAuth scope lists,
 IAM/RBAC policies, Kubernetes RBAC, or workflow `permissions:` blocks —
@@ -83,6 +106,10 @@ Examples of permission-declaring files: GitHub App manifest JSON,
 IAM policy JSON/YAML, Kubernetes `Role`/`ClusterRole` YAML.
 
 ## Workflow permission and role auditing
+
+**Category:** Use `role-escalation` for role or token scope changes,
+`workflow-permission` for `permissions:` block changes, `secret-exposure`
+for secret handling issues.
 
 When a diff modifies workflow files (`.github/workflows/*.yml`,
 reusable workflow definitions):
