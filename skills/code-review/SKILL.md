@@ -98,7 +98,21 @@ dimension carry over to another — each requires its own scrutiny.
   parties?
 - Privilege escalation: can a lower-privilege principal gain
   higher-privilege access through the changed code?
-- Injection vulnerabilities: SQL, command, LDAP, path traversal.
+- Injection vulnerabilities: SQL, command, LDAP, path traversal,
+  GitHub Actions workflow command injection.
+- **GitHub Actions workflow command injection:** Any code emitting GHA
+  workflow commands (`::error::`, `::warning::`, `::notice::`,
+  `::group::`, `::set-output::` (deprecated), `::set-env::` (deprecated,
+  but still active when `ACTIONS_ALLOW_UNSECURE_COMMANDS=true`),
+  `::add-mask::`) must
+  sanitize ALL interpolated values — not just message bodies — for `::`
+  sequences, `%0A`/`%0D` URL-encoded newlines, ANSI escapes, and
+  control characters. Title parameters, file paths, and metadata fields
+  are common blind spots. When reviewing sanitization, verify that EVERY
+  variable interpolated into the command string is sanitized
+  individually; do not conclude safety from partial verification (e.g.,
+  seeing the message body sanitized does not imply the title parameter
+  is also sanitized).
 - Content security: does the change affect how user-supplied content is
   handled or rendered? Are there sandboxing gaps?
 - **Permission manifest changes:** If the diff modifies any file that
