@@ -37,14 +37,15 @@ Sub-agent definitions live in `sub-agents/` relative to this file.
 Each is a markdown file with frontmatter specifying `name`, `model`,
 and `description`.
 
-| Sub-agent              | Model  | Dimension                                                                      |
-|------------------------|--------|--------------------------------------------------------------------------------|
-| `correctness`          | opus   | Logic errors, edge cases, nil handling, API contracts, test adequacy/integrity |
-| `security`             | opus   | Auth, data exposure, privilege escalation, injection defense, content security |
-| `intent-coherence`     | sonnet | Authorization, scope, tier matching, architectural fit, design coherence       |
-| `style-conventions`    | sonnet | Naming, error handling idioms, API shape, code organization                    |
-| `docs-currency`        | sonnet | Documentation staleness (follows docs-review skill inline)                     |
-| `cross-repo-contracts` | sonnet | API contract breakage affecting other repos (conditional)                      |
+| Sub-agent              | Model  | Dispatch   | Dimension                                                                      |
+|------------------------|--------|------------|--------------------------------------------------------------------------------|
+| `correctness`          | opus   | parallel   | Logic errors, edge cases, nil handling, API contracts, test adequacy/integrity |
+| `security`             | opus   | parallel   | Auth, data exposure, privilege escalation, injection defense, content security |
+| `intent-coherence`     | sonnet | parallel   | Authorization, scope, tier matching, architectural fit, design coherence       |
+| `style-conventions`    | sonnet | parallel   | Naming, error handling idioms, API shape, code organization                    |
+| `docs-currency`        | sonnet | parallel   | Documentation staleness (follows docs-review skill inline)                     |
+| `cross-repo-contracts` | sonnet | parallel   | API contract breakage affecting other repos (conditional)                      |
+| `challenger`           | opus   | sequential | Adversarial challenge of findings, false-positive removal, deduplication       |
 
 The Model column reflects each sub-agent's current frontmatter. Any
 value accepted by the Agent tool's `model` parameter is valid in
@@ -448,11 +449,104 @@ location."
 keep both** — they serve different remediation audiences. A logic error
 and an auth bypass on the same line are two distinct findings.
 
-#### 6d. PR-specific checks (orchestrator-only)
+#### 6d. Challenger pass (dedicated sub-agent)
+
+After steps 6a–6c produce a merged finding set, dispatch the
+`challenger` sub-agent to adversarially challenge the findings with
+fresh context. The challenger has not seen the orchestrator's synthesis
+— it receives only the raw findings and the diff, preserving context
+isolation.
+
+1. Read `sub-agents/challenger.md` for the sub-agent definition
+2. Compose the spawn prompt from:
+
+   **Part 1 — Sub-agent definition:** the full markdown body of the
+   challenger sub-agent file (everything after the frontmatter)
+
+   **Part 2 — Meta-prompt:** Read `meta-prompt.md`, fill in the "You
+   are reviewing PR" template, and include everything else verbatim
+
+   **Part 3 — Context package:** the merged finding set from steps
+   6a–6c (as a JSON array), plus the full PR diff and changed files
+   list. Format as:
+
+   ```markdown
+   ## Context
+
+   ### Findings to challenge
+   <JSON array of all findings from steps 6a–6c>
+
+   ### Diff
+   <diff content>
+
+   ### Changed files
+   <file list>
+
+   ### PR metadata
+   <title, body, author, labels>
+   ```
+
+   **Part 4 — Dispatch guard flag:**
+
+   ```markdown
+   REVIEW_SUB_AGENT_TRUE
+   ```
+
+3. Spawn via Agent tool with:
+   - `model`: from the challenger sub-agent frontmatter (`opus`)
+   - `subagent_type`: `Explore` (read-only)
+   - `prompt`: composed from parts 1–4
+
+   **Prompt size guard:** If the combined context package (findings
+   JSON + diff + file list + PR metadata) exceeds 80 000 tokens,
+   truncate the diff to the files referenced by findings only. If it
+   still exceeds the limit, omit the full diff and include only the
+   hunks that correspond to finding line ranges. The challenger can
+   read full files via the `Read` tool if it needs broader context.
+
+   The challenger runs **after** dimension sub-agents complete (it
+   needs their findings as input), so it is dispatched sequentially,
+   not in the parallel batch from step 4.
+
+4. Consume the challenger's output. The challenger returns a **different
+   format** from dimension sub-agents: an object with
+   `adjudicated_findings` and `removed_findings` arrays (not a flat
+   finding array). Parse accordingly:
+
+   - Extract the `adjudicated_findings` array from the challenger's
+     JSON output. Strip the challenger-specific fields
+     (`challenger_action`, `challenger_reason`) before merging into the
+     review finding set — these are logged for transparency but are not
+     part of the standard finding schema.
+   - If `adjudicated_findings` is empty but the pre-challenger finding
+     set was non-empty, treat this as a challenger failure (fall back
+     per step 5 below). A legitimate challenger pass that removes all
+     findings is unlikely — an empty result more likely indicates a
+     parsing error or context truncation.
+   - Otherwise, replace the merged finding set with the challenger's
+     `adjudicated_findings`.
+   - Log any `removed_findings` for transparency but do not include
+     them in the final review.
+
+5. If the challenger sub-agent fails (timeout, error, empty
+   response), fall back to using the pre-challenger merged finding
+   set from steps 6a–6c. Record an **info**-level finding:
+
+   ```json
+   {
+     "severity": "info",
+     "category": "sub-agent-failure",
+     "file": "N/A",
+     "description": "The challenger sub-agent did not return findings: <reason>. Using pre-challenger finding set.",
+     "actionable": false
+   }
+   ```
+
+#### 6e. PR-specific checks (orchestrator-only)
 
 These checks are NOT delegated to sub-agents. They apply PR-level
 context that individual sub-agents do not have access to. Run them
-after all sub-agent findings are collected.
+after the challenger pass has adjudicated sub-agent findings.
 
 ##### PR body injection defense
 
@@ -529,20 +623,9 @@ attention.
 If no protected files are modified, do not add a `protected-path`
 finding.
 
-#### 6e. Challenger pass
-
-This is the verification round. You need to act as an isolated verifier
-who challenges findings against actual code. *Use the source*.
-
-This is an adversarial pass. Your job is to debunk and discredit
-questionable review findings.
-
-e.g. check whether the code already handles something which the review
-finding says is missing (e.g., "the nil check exists 3 lines above")
-
 #### 6f. Determine overall outcome
 
-Merge PR-specific findings into the deduplicated sub-agent findings
+Merge PR-specific findings into the challenger-adjudicated finding set
 and evaluate:
 
 - Any **critical** or **high** finding → `request-changes`
@@ -694,7 +777,7 @@ wins.
   `request-changes`.
 - **Never approve when any protected-path finding exists**, regardless of
   severity.
-- **PR-specific checks (step 6d) belong in the orchestrator only.** Do
+- **PR-specific checks (step 6e) belong in the orchestrator only.** Do
   not push protected-path checks, scope authorization, or PR body
   injection defense into sub-agents. These require PR-level context
   that sub-agents do not have.
