@@ -139,6 +139,88 @@ if [ "${ACTION}" = "approve" ]; then
 fi
 
 # ---------------------------------------------------------------------------
+# Label-actions validation: the review agent may recommend contextual labels
+# (e.g. area/api, priority/high). Validate them here so the label reason
+# appears in the review body. Actual label API calls happen after posting.
+# ---------------------------------------------------------------------------
+REVIEW_CONTROL_LABELS=(
+  "ready-for-merge" "requires-manual-review" "rejected"
+  "ready-for-review" "fullsend-no-fix" "fullsend-fix"
+)
+
+is_control_label() {
+  local label="$1"
+  for cl in "${REVIEW_CONTROL_LABELS[@]}"; do
+    if [[ "${cl}" == "${label}" ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+VALIDATED_LABEL_ADDS=()
+VALIDATED_LABEL_REMOVES=()
+LABEL_REASON=""
+
+HAS_LABEL_ACTIONS=$(jq 'has("label_actions")' "${RESULT_FILE}")
+if [[ "${HAS_LABEL_ACTIONS}" == "true" ]]; then
+  LABEL_REASON=$(jq -r '.label_actions.reason' "${RESULT_FILE}")
+  LABEL_COUNT=$(jq '.label_actions.actions | length' "${RESULT_FILE}")
+
+  echo "Validating ${LABEL_COUNT} label action(s)..."
+
+  # Fetch existing repo labels once.
+  EXISTING_LABELS=$(gh api "repos/${REPO_FULL_NAME}/labels" --paginate --jq '.[].name' 2>/dev/null || true)
+
+  label_exists() {
+    local label="$1"
+    echo "${EXISTING_LABELS}" | grep -qFx "${label}"
+  }
+
+  for i in $(seq 0 $((LABEL_COUNT - 1))); do
+    LA_ACTION=$(jq -r ".label_actions.actions[${i}].action" "${RESULT_FILE}")
+    LA_LABEL=$(jq -r ".label_actions.actions[${i}].label" "${RESULT_FILE}")
+
+    if [[ ! "${LA_LABEL}" =~ ^[a-zA-Z0-9._/:\ +\-]+$ ]]; then
+      echo "::warning::Refused label '${LA_LABEL}' -- contains invalid characters"
+      continue
+    fi
+
+    if is_control_label "${LA_LABEL}"; then
+      echo "::warning::Refused to ${LA_ACTION} control label '${LA_LABEL}' -- control labels are managed by the review pipeline"
+      continue
+    fi
+
+    case "${LA_ACTION}" in
+      add)
+        if ! label_exists "${LA_LABEL}"; then
+          echo "::warning::Skipping label '${LA_LABEL}' -- does not exist in repo (will not auto-create)"
+          continue
+        fi
+        VALIDATED_LABEL_ADDS+=("${LA_LABEL}")
+        ;;
+      remove)
+        VALIDATED_LABEL_REMOVES+=("${LA_LABEL}")
+        ;;
+      *)
+        echo "::warning::Unknown label action '${LA_ACTION}' for label '${LA_LABEL}'"
+        ;;
+    esac
+  done
+
+  # Append label reason to body if any labels validated.
+  VALIDATED_COUNT=$(( ${#VALIDATED_LABEL_ADDS[@]} + ${#VALIDATED_LABEL_REMOVES[@]} ))
+  if [[ "${VALIDATED_COUNT}" -gt 0 ]]; then
+    LABEL_NOTICE=$'\n\n---\n'"**Labels:** ${LABEL_REASON}"
+    LABEL_MODIFIED_RESULT=$(mktemp)
+    jq --arg notice "${LABEL_NOTICE}" \
+      '.body = (.body + $notice)' \
+      "${RESULT_FILE}" > "${LABEL_MODIFIED_RESULT}"
+    RESULT_FILE="${LABEL_MODIFIED_RESULT}"
+  fi
+fi
+
+# ---------------------------------------------------------------------------
 # Post the review. Exit code 10 = stale-head: the PR HEAD moved after the
 # agent reviewed it. When this happens, post a /fs-review comment to
 # re-dispatch a fresh review for the current HEAD.
@@ -224,5 +306,22 @@ elif [ "${ACTION}" = "reject" ]; then
 elif [ "${ACTION}" = "request_changes" ]; then
   echo "Request-changes disposition — no outcome label (fix agent triggers on event)"
 fi
+
+# ---------------------------------------------------------------------------
+# Contextual labels: apply validated label mutations from label_actions.
+# ---------------------------------------------------------------------------
+for label in "${VALIDATED_LABEL_ADDS[@]}"; do
+  echo "Adding contextual label '${label}'..."
+  gh api "repos/${REPO_FULL_NAME}/issues/${PR_NUMBER}/labels" \
+    -f "labels[]=${label}" --silent || \
+    echo "::warning::Failed to add label '${label}'"
+done
+
+for label in "${VALIDATED_LABEL_REMOVES[@]}"; do
+  echo "Removing contextual label '${label}'..."
+  encoded=$(printf '%s' "${label}" | jq -sRr @uri)
+  gh api "repos/${REPO_FULL_NAME}/issues/${PR_NUMBER}/labels/${encoded}" \
+    -X DELETE --silent 2>/dev/null || true
+done
 
 echo "Review posted on ${REPO_FULL_NAME}#${PR_NUMBER}"

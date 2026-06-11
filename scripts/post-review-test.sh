@@ -99,6 +99,62 @@ run_test "failure-action-no-label" \
 run_test "unknown-action-no-label" \
   "banana" "false" "none"
 
+# ---------------------------------------------------------------------------
+# Control-label guard tests
+# ---------------------------------------------------------------------------
+
+REVIEW_CONTROL_LABELS=(
+  "ready-for-merge" "requires-manual-review" "rejected"
+  "ready-for-review" "fullsend-no-fix" "fullsend-fix"
+)
+
+is_control_label() {
+  local label="$1"
+  for cl in "${REVIEW_CONTROL_LABELS[@]}"; do
+    if [[ "${cl}" == "${label}" ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+run_control_label_test() {
+  local test_name="$1"
+  local label="$2"
+  local expected_control="$3"
+
+  if is_control_label "${label}"; then
+    local actual="true"
+  else
+    local actual="false"
+  fi
+
+  if [ "${actual}" != "${expected_control}" ]; then
+    echo "FAIL: ${test_name}"
+    echo "  label:    '${label}'"
+    echo "  expected: '${expected_control}'"
+    echo "  actual:   '${actual}'"
+    FAILURES=$((FAILURES + 1))
+    return
+  fi
+
+  echo "PASS: ${test_name}"
+}
+
+# Control labels should be recognized
+run_control_label_test "ready-for-merge-is-control" "ready-for-merge" "true"
+run_control_label_test "requires-manual-review-is-control" "requires-manual-review" "true"
+run_control_label_test "rejected-is-control" "rejected" "true"
+run_control_label_test "ready-for-review-is-control" "ready-for-review" "true"
+run_control_label_test "fullsend-no-fix-is-control" "fullsend-no-fix" "true"
+run_control_label_test "fullsend-fix-is-control" "fullsend-fix" "true"
+
+# Non-control labels should NOT be recognized
+run_control_label_test "area-api-not-control" "area/api" "false"
+run_control_label_test "priority-high-not-control" "priority/high" "false"
+run_control_label_test "bug-not-control" "bug" "false"
+run_control_label_test "empty-not-control" "" "false"
+
 # --- Summary ---
 
 echo ""
