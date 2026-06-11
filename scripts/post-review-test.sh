@@ -224,6 +224,7 @@ run_label_test() {
   : > "${GH_LOG}"
 
   local exit_code=0
+  # shellcheck disable=SC2030
   (
     cd "${run_dir}"
     export PATH="${MOCK_BIN}:${PATH}"
@@ -262,6 +263,7 @@ run_label_test_stdout() {
   : > "${GH_LOG}"
 
   local exit_code=0
+  # shellcheck disable=SC2030,SC2031
   (
     cd "${run_dir}"
     export PATH="${MOCK_BIN}:${PATH}"
@@ -300,6 +302,7 @@ run_label_test_no_pattern() {
   : > "${GH_LOG}"
 
   local exit_code=0
+  # shellcheck disable=SC2030,SC2031
   (
     cd "${run_dir}"
     export PATH="${MOCK_BIN}:${PATH}"
