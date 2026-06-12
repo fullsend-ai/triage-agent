@@ -29,6 +29,11 @@ fi
 echo "::add-mask::${REVIEW_TOKEN}"
 export GH_TOKEN="${REVIEW_TOKEN}"
 
+# Temp file cleanup: accumulate files to remove on exit so later traps
+# don't overwrite earlier ones.
+CLEANUP_FILES=()
+trap 'rm -f "${CLEANUP_FILES[@]}"' EXIT
+
 # Refuse to post reviews on merged or closed PRs
 PR_STATE=$(gh pr view "${PR_NUMBER}" --repo "${REPO_FULL_NAME}" --json state --jq '.state')
 if [ "${PR_STATE}" != "OPEN" ]; then
@@ -129,7 +134,7 @@ if [ "${ACTION}" = "approve" ]; then
 
     # Rewrite the result file with downgraded action and appended notice.
     MODIFIED_RESULT=$(mktemp)
-    trap 'rm -f "${MODIFIED_RESULT}"' EXIT
+    CLEANUP_FILES+=("${MODIFIED_RESULT}")
     jq --arg notice "${PROTECTED_NOTICE}" \
       '.action = "comment" | .body = (.body + $notice)' \
       "${RESULT_FILE}" > "${MODIFIED_RESULT}"
@@ -181,6 +186,16 @@ if [[ "${HAS_LABEL_ACTIONS}" == "true" ]]; then
     LA_ACTION=$(jq -r ".label_actions.actions[${i}].action" "${RESULT_FILE}")
     LA_LABEL=$(jq -r ".label_actions.actions[${i}].label" "${RESULT_FILE}")
 
+    # Sanitize jq -r output: strip newlines, carriage returns, and GHA
+    # workflow command delimiters to prevent command injection via crafted
+    # label names or action values.
+    LA_ACTION="${LA_ACTION//$'\n'/}"
+    LA_ACTION="${LA_ACTION//$'\r'/}"
+    LA_ACTION="${LA_ACTION//::/:}"
+    LA_LABEL="${LA_LABEL//$'\n'/}"
+    LA_LABEL="${LA_LABEL//$'\r'/}"
+    LA_LABEL="${LA_LABEL//::/:}"
+
     if [[ ! "${LA_LABEL}" =~ ^[a-zA-Z0-9._/:\ +\-]+$ ]]; then
       echo "::warning::Refused label '${LA_LABEL}' -- contains invalid characters"
       continue
@@ -213,7 +228,7 @@ if [[ "${HAS_LABEL_ACTIONS}" == "true" ]]; then
   if [[ "${VALIDATED_COUNT}" -gt 0 ]]; then
     LABEL_NOTICE=$'\n\n---\n'"**Labels:** ${LABEL_REASON}"
     LABEL_MODIFIED_RESULT=$(mktemp)
-    trap 'rm -f "${LABEL_MODIFIED_RESULT}"' EXIT
+    CLEANUP_FILES+=("${LABEL_MODIFIED_RESULT}")
     jq --arg notice "${LABEL_NOTICE}" \
       '.body = (.body + $notice)' \
       "${RESULT_FILE}" > "${LABEL_MODIFIED_RESULT}"

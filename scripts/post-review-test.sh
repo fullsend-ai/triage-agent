@@ -381,6 +381,18 @@ run_label_test "label-actions-with-request-changes" \
   '{"action":"request-changes","pr_number":99,"repo":"test-org/test-repo","head_sha":"abc123","body":"Issues found","findings":[{"severity":"high","category":"bug","file":"main.go","description":"nil deref"}],"label_actions":{"reason":"Touches CI config.","actions":[{"action":"add","label":"area/api"}]}}' \
   "gh api repos/test-org/test-repo/issues/99/labels -f labels[]=area/api --silent"
 
+# Label with embedded newline (GHA command injection attempt) — should be refused
+run_label_test_stdout "label-actions-newline-injection-refused" \
+  '{"action":"approve","pr_number":99,"repo":"test-org/test-repo","head_sha":"abc123","body":"LGTM","label_actions":{"reason":"Injection.","actions":[{"action":"add","label":"ok\n::set-output name=x::pwned"}]}}' \
+  "::warning::Refused label"
+
+# Label with :: delimiter (GHA command injection attempt) — :: is sanitized to :,
+# so the label becomes ":warning:injected" which passes the character regex but
+# does not exist in the repo. The important thing is the :: is stripped.
+run_label_test_stdout "label-actions-gha-delimiter-sanitized" \
+  '{"action":"approve","pr_number":99,"repo":"test-org/test-repo","head_sha":"abc123","body":"LGTM","label_actions":{"reason":"Injection.","actions":[{"action":"add","label":"::warning::injected"}]}}' \
+  "::warning::Skipping label ':warning:injected'"
+
 # --- Summary ---
 
 echo ""
