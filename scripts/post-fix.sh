@@ -305,7 +305,7 @@ else
   PROCESS_EXIT=0
   python3 "${PROCESS_SCRIPT}" "${RESULT_FILE}" "${REPO_FULL_NAME}" "${PR_NUMBER}" || PROCESS_EXIT=$?
   if [ "${PROCESS_EXIT}" -eq 1 ]; then
-    echo "ERROR: process-fix-result.py failed with exit code 1 (bad input) for PR #${PR_NUMBER} in ${REPO_FULL_NAME}" >&2
+    echo "::error::process-fix-result.py failed with exit code 1 (bad input) for PR #${PR_NUMBER} in ${REPO_FULL_NAME}" >&2
     exit 1
   elif [ "${PROCESS_EXIT}" -ne 0 ]; then
     echo "::warning::process-fix-result.py exited ${PROCESS_EXIT} — continuing with labels/summary"

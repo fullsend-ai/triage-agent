@@ -407,16 +407,19 @@ Closes #${ISSUE_NUMBER}
 - [x] Pre-commit hooks passed (authoritative run on runner)
 - [x] Tests ran inside sandbox"
 
+PR_CREATE_STDERR=$(mktemp)
 if ! PR_URL=$(gh pr create \
   --repo "${REPO_FULL_NAME}" \
   --head "${BRANCH}" \
   --base "${TARGET_BRANCH}" \
   --title "${PR_TITLE}" \
-  --body "${PR_BODY}" 2>/tmp/pr_create_stderr); then
+  --body "${PR_BODY}" 2>"${PR_CREATE_STDERR}"); then
   echo "::error::Failed to create PR for ${REPO_FULL_NAME} (head: ${BRANCH}, base: ${TARGET_BRANCH})" >&2
-  [[ -s /tmp/pr_create_stderr ]] && cat /tmp/pr_create_stderr >&2
+  [ -s "${PR_CREATE_STDERR}" ] && cat "${PR_CREATE_STDERR}" >&2
+  rm -f "${PR_CREATE_STDERR}"
   exit 1
 fi
+rm -f "${PR_CREATE_STDERR}"
 
 echo "PR created: ${PR_URL}"
 echo "pr_url=${PR_URL}" >> "${GITHUB_OUTPUT:-/dev/null}"

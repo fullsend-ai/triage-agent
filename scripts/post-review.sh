@@ -177,7 +177,7 @@ ${REDISPATCH_MARKER}" || echo "::warning::Failed to post re-dispatch comment"
   # appear as a failure.
   exit 0
 elif [ "${POST_REVIEW_EXIT}" -ne 0 ]; then
-  echo "ERROR: fullsend post-review failed with exit code ${POST_REVIEW_EXIT} (PR #${PR_NUMBER} in ${REPO_FULL_NAME})" >&2
+  echo "::error::fullsend post-review failed with exit code ${POST_REVIEW_EXIT} (PR #${PR_NUMBER} in ${REPO_FULL_NAME})" >&2
   exit "${POST_REVIEW_EXIT}"
 fi
 
