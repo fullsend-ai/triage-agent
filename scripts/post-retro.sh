@@ -26,7 +26,7 @@ for dir in iteration-*/output; do
 done
 
 if [[ -z "${RESULT_FILE}" ]]; then
-  echo "ERROR: agent-result.json not found in any iteration output directory"
+  echo "ERROR: agent-result.json not found in any iteration output directory" >&2
   exit 1
 fi
 
@@ -34,14 +34,14 @@ echo "Reading retro result from: ${RESULT_FILE}"
 
 # Validate JSON is parseable.
 if ! jq empty "${RESULT_FILE}" 2>/dev/null; then
-  echo "ERROR: ${RESULT_FILE} is not valid JSON"
+  echo "ERROR: ${RESULT_FILE} is not valid JSON" >&2
   exit 1
 fi
 
 # Extract repo and number from ORIGINATING_URL.
 # Accepts both /issues/N and /pull/N.
 if [[ ! "${ORIGINATING_URL}" =~ ^https://github\.com/[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+/(issues|pull)/[0-9]+$ ]]; then
-  echo "ERROR: ORIGINATING_URL does not match expected pattern: ${ORIGINATING_URL}"
+  echo "ERROR: ORIGINATING_URL does not match expected pattern: ${ORIGINATING_URL}" >&2
   exit 1
 fi
 ORIGINATING_REPO=$(echo "${ORIGINATING_URL}" | sed -E 's#https://github.com/##; s#/(issues|pull)/.*##')
@@ -57,16 +57,16 @@ echo "Found ${PROPOSAL_COUNT} proposal(s)"
 for i in $(seq 0 $((PROPOSAL_COUNT - 1))); do
   TR=$(jq -r ".proposals[$i].target_repo" "${RESULT_FILE}")
   if [[ ! "${TR}" =~ ^[a-zA-Z0-9._-]+/[a-zA-Z0-9._-]+$ ]]; then
-    echo "ERROR: proposal[$i].target_repo is not a valid owner/repo: ${TR}"
+    echo "ERROR: proposal[$i].target_repo is not a valid owner/repo: ${TR}" >&2
     exit 1
   fi
   TI=$(jq -r ".proposals[$i].title // empty" "${RESULT_FILE}")
   if [[ -z "${TI}" ]]; then
-    echo "ERROR: proposal[$i].title is missing or empty"
+    echo "ERROR: proposal[$i].title is missing or empty" >&2
     exit 1
   fi
   jq -e ".proposals[$i] | .what_happened and .what_could_go_better and .proposed_change and .validation_criteria" "${RESULT_FILE}" >/dev/null 2>&1 || {
-    echo "ERROR: proposal[$i] is missing required fields"
+    echo "ERROR: proposal[$i] is missing required fields" >&2
     exit 1
   }
 done
@@ -98,7 +98,7 @@ for i in $(seq 0 $((PROPOSAL_COUNT - 1))); do
     --repo "${TARGET_REPO}" \
     --title "${TITLE}" \
     --body "${BODY}" 2>&1); then
-    echo "ERROR: failed to create issue in ${TARGET_REPO}: ${ISSUE_URL}"
+    echo "ERROR: failed to create issue in ${TARGET_REPO} (gh issue create --repo ${TARGET_REPO}): ${ISSUE_URL}" >&2
     exit 1
   fi
 
@@ -113,7 +113,7 @@ done
 # number is a PR. See https://github.com/orgs/community/discussions/26644
 SUMMARY=$(jq -r '.summary // empty' "${RESULT_FILE}")
 if [[ -z "${SUMMARY}" ]]; then
-  echo "ERROR: .summary is missing or empty in agent result"
+  echo "ERROR: .summary is missing or empty in agent result" >&2
   exit 1
 fi
 

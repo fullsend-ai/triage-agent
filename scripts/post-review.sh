@@ -21,7 +21,7 @@ set -euo pipefail
 : "${REVIEW_TOKEN:?REVIEW_TOKEN is required}"
 : "${PR_NUMBER:?PR_NUMBER is required}"
 if ! [[ "${PR_NUMBER}" =~ ^[0-9]+$ ]]; then
-  echo "::error::PR_NUMBER must be a positive integer"
+  echo "::error::PR_NUMBER must be a positive integer" >&2
   exit 1
 fi
 : "${REPO_FULL_NAME:?REPO_FULL_NAME is required}"
@@ -97,7 +97,7 @@ DOWNGRADED=false
 if [ "${ACTION}" = "approve" ]; then
   PR_FILES=$(gh pr view "${PR_NUMBER}" --repo "${REPO_FULL_NAME}" --json files --jq '.files[].path')
   if [ -z "${PR_FILES}" ]; then
-    echo "::error::Failed to fetch PR files or PR has no changed files — refusing to approve"
+    echo "::error::Failed to fetch PR files or PR has no changed files — refusing to approve (GET repos/${REPO_FULL_NAME}/pulls/${PR_NUMBER}/files)" >&2
     exit 1
   fi
 
@@ -177,6 +177,7 @@ ${REDISPATCH_MARKER}" || echo "::warning::Failed to post re-dispatch comment"
   # appear as a failure.
   exit 0
 elif [ "${POST_REVIEW_EXIT}" -ne 0 ]; then
+  echo "ERROR: fullsend post-review failed with exit code ${POST_REVIEW_EXIT} (PR #${PR_NUMBER} in ${REPO_FULL_NAME})" >&2
   exit "${POST_REVIEW_EXIT}"
 fi
 
