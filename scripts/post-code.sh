@@ -82,7 +82,7 @@ if [ -n "${RESULT_FILE}" ]; then
   AGENT_TARGET="$(jq -r '.target_branch // empty' "${RESULT_FILE}" 2>/dev/null || true)"
 fi
 
-DEFAULT_BRANCH="$(gh api "repos/${REPO_FULL_NAME}" --jq '.default_branch' 2>/dev/null || echo 'main')"
+DEFAULT_BRANCH="$(GH_TOKEN="${PUSH_TOKEN}" gh api "repos/${REPO_FULL_NAME}" --jq '.default_branch' 2>/dev/null || echo 'main')"
 
 if [ -n "${AGENT_TARGET}" ]; then
   ALLOWED="${CODE_ALLOWED_TARGET_BRANCHES:-${DEFAULT_BRANCH}}"
@@ -90,7 +90,7 @@ if [ -n "${AGENT_TARGET}" ]; then
     TARGET_BRANCH="${AGENT_TARGET}"
     echo "Agent requested branch '${TARGET_BRANCH}' — allowed"
   else
-    echo "::error::Agent requested branch '${AGENT_TARGET}' but allowed branches are: ${ALLOWED}"
+    echo "Error: agent requested branch '${AGENT_TARGET}' but allowed branches are: ${ALLOWED}"
     exit 1
   fi
 else
