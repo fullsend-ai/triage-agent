@@ -48,7 +48,7 @@ REPO_DIR="${REPO_DIR:-repo}"
 
 if [ "${REPO_DIR}" != "." ]; then
   if [ ! -d "${REPO_DIR}" ]; then
-    echo "::error::Extracted repo not found at ${REPO_DIR}"
+    echo "::error::Extracted repo not found at ${REPO_DIR}" >&2
     exit 1
   fi
   cd "${REPO_DIR}"
@@ -215,9 +215,9 @@ echo "Secret scan passed — no leaks in agent's commit(s)"
 # ---------------------------------------------------------------------------
 echo "Checking for Signed-off-by trailers in agent's commit(s)..."
 if git log --format='%b' "${SCAN_RANGE}" | grep -q '^Signed-off-by:'; then
-  echo "::error::BLOCKED — agent commit contains a Signed-off-by trailer"
-  echo "::error::Agents must not use 'git commit -s' or append Signed-off-by trailers."
-  echo "::error::DCO is a human attestation; the DCO app waives the check for bots."
+  echo "::error::BLOCKED — agent commit contains a Signed-off-by trailer" >&2
+  echo "::error::Agents must not use 'git commit -s' or append Signed-off-by trailers." >&2
+  echo "::error::DCO is a human attestation; the DCO app waives the check for bots." >&2
   exit 1
 fi
 echo "Signed-off-by scan passed — no trailers in agent's commit(s)"
@@ -231,7 +231,7 @@ if ! command -v lychee >/dev/null 2>&1; then
   case "$(uname -m)" in
     x86_64)  LY_TRIPLE="x86_64-unknown-linux-gnu";  LY_SHA="${LYCHEE_SHA256_AMD64}" ;;
     aarch64) LY_TRIPLE="aarch64-unknown-linux-gnu"; LY_SHA="${LYCHEE_SHA256_ARM64}" ;;
-    *) echo "::error::Unsupported architecture for lychee: $(uname -m)"; exit 1 ;;
+    *) echo "::error::Unsupported architecture for lychee: $(uname -m)" >&2; exit 1 ;;
   esac
   curl -fsSL \
     "https://github.com/lycheeverse/lychee/releases/download/lychee-v${LYCHEE_VERSION}/lychee-${LY_TRIPLE}.tar.gz" \
@@ -279,9 +279,9 @@ if [ -f .pre-commit-config.yaml ]; then
     if pre-commit run --files "${changed_array[@]}"; then
       echo "Pre-commit passed — all hooks clean"
     else
-      echo "::error::BLOCKED — pre-commit hooks failed on agent's changes"
-      echo "::error::The agent's code does not pass the repo's pre-commit hooks."
-      echo "::error::Fix the issues and re-run, or update the pre-commit config."
+      echo "::error::BLOCKED — pre-commit hooks failed on agent's changes" >&2
+      echo "::error::The agent's code does not pass the repo's pre-commit hooks." >&2
+      echo "::error::Fix the issues and re-run, or update the pre-commit config." >&2
       exit 1
     fi
   else
@@ -334,7 +334,8 @@ if [ "${PUSH_RC}" -ne 0 ]; then
     echo "::warning::Plain push failed (non-fast-forward) — retrying with --force-with-lease"
     git push --force-with-lease -u origin -- "${BRANCH}" 2>&1
   else
-    echo "::error::Push failed with unexpected error"
+    echo "::error::Push failed with unexpected error (git push origin ${BRANCH})" >&2
+    echo "::error::Push output: ${PUSH_OUTPUT}" >&2
     exit 1
   fi
 fi
@@ -406,15 +407,19 @@ Closes #${ISSUE_NUMBER}
 - [x] Pre-commit hooks passed (authoritative run on runner)
 - [x] Tests ran inside sandbox"
 
+PR_CREATE_STDERR=$(mktemp)
 if ! PR_URL=$(gh pr create \
   --repo "${REPO_FULL_NAME}" \
   --head "${BRANCH}" \
   --base "${TARGET_BRANCH}" \
   --title "${PR_TITLE}" \
-  --body "${PR_BODY}"); then
-  echo "::error::Failed to create PR: see above for details"
+  --body "${PR_BODY}" 2>"${PR_CREATE_STDERR}"); then
+  echo "::error::Failed to create PR for ${REPO_FULL_NAME} (head: ${BRANCH}, base: ${TARGET_BRANCH})" >&2
+  [ -s "${PR_CREATE_STDERR}" ] && cat "${PR_CREATE_STDERR}" >&2
+  rm -f "${PR_CREATE_STDERR}"
   exit 1
 fi
+rm -f "${PR_CREATE_STDERR}"
 
 echo "PR created: ${PR_URL}"
 echo "pr_url=${PR_URL}" >> "${GITHUB_OUTPUT:-/dev/null}"

@@ -73,7 +73,7 @@ RUN_DIR="$(pwd)"
 
 if [ "${REPO_DIR}" != "." ]; then
   if [ ! -d "${REPO_DIR}" ]; then
-    echo "::error::Extracted repo not found at ${REPO_DIR}"
+    echo "::error::Extracted repo not found at ${REPO_DIR}" >&2
     exit 1
   fi
   cd "${REPO_DIR}"
@@ -172,9 +172,9 @@ if [ "${NO_PUSH}" = "false" ]; then
   # -------------------------------------------------------------------------
   echo "Checking for Signed-off-by trailers in agent's commit(s)..."
   if git log --format='%b' "${SCAN_RANGE}" | grep -q '^Signed-off-by:'; then
-    echo "::error::BLOCKED — agent commit contains a Signed-off-by trailer"
-    echo "::error::Agents must not use 'git commit -s' or append Signed-off-by trailers."
-    echo "::error::DCO is a human attestation; the DCO app waives the check for bots."
+    echo "::error::BLOCKED — agent commit contains a Signed-off-by trailer" >&2
+    echo "::error::Agents must not use 'git commit -s' or append Signed-off-by trailers." >&2
+    echo "::error::DCO is a human attestation; the DCO app waives the check for bots." >&2
     exit 1
   fi
   echo "Signed-off-by scan passed — no trailers in agent's commit(s)"
@@ -189,7 +189,7 @@ if ! command -v lychee >/dev/null 2>&1; then
   case "$(uname -m)" in
     x86_64)  LY_TRIPLE="x86_64-unknown-linux-gnu";  LY_SHA="${LYCHEE_SHA256_AMD64}" ;;
     aarch64) LY_TRIPLE="aarch64-unknown-linux-gnu"; LY_SHA="${LYCHEE_SHA256_ARM64}" ;;
-    *) echo "::error::Unsupported architecture for lychee: $(uname -m)"; exit 1 ;;
+    *) echo "::error::Unsupported architecture for lychee: $(uname -m)" >&2; exit 1 ;;
   esac
   curl -fsSL \
     "https://github.com/lycheeverse/lychee/releases/download/lychee-v${LYCHEE_VERSION}/lychee-${LY_TRIPLE}.tar.gz" \
@@ -236,7 +236,7 @@ if [ "${NO_PUSH}" = "false" ] && [ -f .pre-commit-config.yaml ]; then
     if pre-commit run --files "${changed_array[@]}"; then
       echo "Pre-commit passed — all hooks clean"
     else
-      echo "::error::BLOCKED — pre-commit hooks failed on agent's changes"
+      echo "::error::BLOCKED — pre-commit hooks failed on agent's changes" >&2
       exit 1
     fi
   else
@@ -294,7 +294,7 @@ else
     SCAN_DIR="$(mktemp -d)"
     cp "${RESULT_FILE}" "${SCAN_DIR}/fix-result.json"
     if ! gitleaks detect --source "${SCAN_DIR}" --no-git --redact 2>/dev/null; then
-      echo "::error::Secret detected in fix-result.json — refusing to post PR comment"
+      echo "::error::Secret detected in fix-result.json — refusing to post PR comment" >&2
       rm -rf "${SCAN_DIR}"
       exit 1
     fi
@@ -305,7 +305,8 @@ else
   PROCESS_EXIT=0
   python3 "${PROCESS_SCRIPT}" "${RESULT_FILE}" "${REPO_FULL_NAME}" "${PR_NUMBER}" || PROCESS_EXIT=$?
   if [ "${PROCESS_EXIT}" -eq 1 ]; then
-    exit 1  # hard failure (bad input)
+    echo "::error::process-fix-result.py failed with exit code 1 (bad input) for PR #${PR_NUMBER} in ${REPO_FULL_NAME}" >&2
+    exit 1
   elif [ "${PROCESS_EXIT}" -ne 0 ]; then
     echo "::warning::process-fix-result.py exited ${PROCESS_EXIT} — continuing with labels/summary"
   fi
