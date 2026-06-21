@@ -25,11 +25,11 @@ If a prior review exists (e.g., re-review after fixes), it is injected into the 
 
 | Command | Where | Effect |
 |---------|-------|--------|
-| `/fs-review` | Issue or PR comment | Triggers a review |
+| `/fs-review` | PR comment | Triggers a review on the PR |
 
-The `/fs-review` command does not accept arguments. The review agent also runs
-automatically when a PR is opened, synchronized (new commits pushed), or moved
-out of draft.
+The `/fs-review` command does not accept arguments and only works on pull
+requests. The review agent also runs automatically when a PR is opened,
+synchronized (new commits pushed), or moved out of draft.
 
 ## Control labels
 
@@ -37,7 +37,7 @@ These labels are applied by the review post-script based on the review outcome.
 
 | Label | Meaning |
 |-------|---------|
-| `ready-for-review` | Signals the review agent to evaluate the PR. Applied by the [code agent](code.md) post-script. |
+| `ready-for-review` | Workflow state marker on the PR. Applied by the [code agent](code.md) post-script after pushing; not a dispatch trigger — review runs via `pull_request_target` instead. |
 | `ready-for-merge` | The review agent approved the PR. No blocking findings. |
 | `requires-manual-review` | The review agent found issues that require human judgment — it could not confidently approve or reject. |
 | `rejected` | The review agent rejected the PR and the post-script closed it. |
