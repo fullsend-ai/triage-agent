@@ -63,7 +63,7 @@ fi
 : "${REPO_FULL_NAME:?REPO_FULL_NAME is required}"
 : "${ISSUE_NUMBER:?ISSUE_NUMBER is required}"
 # ---------------------------------------------------------------------------
-# Resolve target branch (ADR 0047)
+# Resolve target branch (ADR 0051)
 #
 # Priority: agent output > allowed-list validation > auto-detect default
 # The agent writes its chosen branch to code-result.json. The post-script
@@ -80,6 +80,10 @@ for dir in "${RUN_DIR}"/iteration-*/output; do
 done
 if [ -n "${RESULT_FILE}" ]; then
   AGENT_TARGET="$(jq -r '.target_branch // empty' "${RESULT_FILE}" 2>/dev/null || true)"
+fi
+if [[ -n "${AGENT_TARGET}" && ! "${AGENT_TARGET}" =~ ^[a-zA-Z0-9._/-]+$ ]]; then
+  echo "Error: invalid branch name from agent output: '${AGENT_TARGET}'"
+  exit 1
 fi
 
 DEFAULT_BRANCH="$(GH_TOKEN="${PUSH_TOKEN}" gh api "repos/${REPO_FULL_NAME}" --jq '.default_branch' 2>/dev/null || echo 'main')"
