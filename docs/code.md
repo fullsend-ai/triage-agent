@@ -28,7 +28,7 @@ This separation ensures the agent never has direct write access to the repositor
 |---------|-------|--------|
 | `/fs-code` | Issue comment | Triggers the code agent on the issue |
 
-Requires OWNER, MEMBER, or COLLABORATOR repository association.
+Requires write-level repository permission (admin, maintain, or write).
 
 The `/fs-code` command accepts an optional `--force` flag. It can only be used
 on issues (not PRs). The code agent is also triggered automatically when the

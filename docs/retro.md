@@ -27,7 +27,7 @@ When triggered via `/fs-retro`, the human's comment is passed to the agent as hi
 |---------|-------|--------|
 | `/fs-retro` | PR or issue comment | Triggers a retrospective analysis |
 
-Requires OWNER, MEMBER, or COLLABORATOR repository association.
+Requires write-level repository permission (admin, maintain, or write).
 
 The `/fs-retro` command accepts optional free-text instructions after the
 command. The text is passed to the agent as high-signal direction about what
