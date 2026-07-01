@@ -29,11 +29,8 @@ post_script: scripts/post-triage.sh
 
 validation_loop:
   script: scripts/validate-output-schema.sh
+  schema: schemas/triage-result.schema.json
   max_iterations: 2
-
-env:
-  runner:
-    FULLSEND_OUTPUT_SCHEMA: ${FULLSEND_DIR}/schemas/triage-result.schema.json
 
 timeout_minutes: 10
 
