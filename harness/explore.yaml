@@ -1,4 +1,5 @@
 ---
+doc: docs/explore.md
 agent: agents/explore.md
 model: opus
 image: ghcr.io/fullsend-ai/fullsend-sandbox:latest

@@ -18,10 +18,16 @@ source "${SCRIPT_DIR}/comment-helpers.sh"
 
 validate_label_name() {
   local label="$1"
-  if [[ ! "$label" =~ ^[a-zA-Z0-9][a-zA-Z0-9._-]*$ ]]; then
-    echo "ERROR: invalid label name: ${label}"
-    exit 1
+  if [[ ! "${label}" =~ ^[a-zA-Z0-9._/:\ +\-]+$ ]]; then
+    echo "::warning::Refused pipeline label '${label}' -- contains invalid characters"
+    return 1
   fi
+  return 0
+}
+
+github_label_exists() {
+  local label="$1"
+  echo "${EXISTING_GH_LABELS}" | grep -qFx "${label}"
 }
 
 RESULT_FILE=""
@@ -45,7 +51,7 @@ fi
 
 OVERALL_CONFIDENCE=$(jq -r '.confidence.overall // 0' "${RESULT_FILE}")
 GAP_COUNT=$(jq '.gaps // [] | length' "${RESULT_FILE}")
-RELATED_COUNT=$(jq '.related_work | length' "${RESULT_FILE}")
+RELATED_COUNT=$(jq '.related_work // [] | length' "${RESULT_FILE}")
 
 echo "::notice::Exploration complete: confidence=${OVERALL_CONFIDENCE}, gaps=${GAP_COUNT}, related_work=${RELATED_COUNT}"
 
@@ -59,6 +65,7 @@ echo "Exploration context saved to ${WORKSPACE}/exploration_context.json"
 ATTACHMENT_NAME="exploration_context.json"
 
 if [[ "${ISSUE_SOURCE:-}" == "jira" && -n "${JIRA_HOST:-}" && -n "${JIRA_EMAIL:-}" && -n "${JIRA_API_TOKEN:-}" ]]; then
+  validate_jira_host
   AUTH=$(printf '%s:%s' "$JIRA_EMAIL" "$JIRA_API_TOKEN" | base64 -w0)
 
   EXISTING_ID=$(curl -sSf \
@@ -99,26 +106,34 @@ SIGNAL_LABEL=""
 STATUS_MSG="Exploration complete (confidence: ${CONFIDENCE_INT}/100)."
 
 if [[ -n "$READY_LABEL" || -n "$NEEDS_INFO_LABEL" ]]; then
-  [[ -n "$READY_LABEL" ]] && validate_label_name "$READY_LABEL"
-  [[ -n "$NEEDS_INFO_LABEL" ]] && validate_label_name "$NEEDS_INFO_LABEL"
   if [[ "$CONFIDENCE_INT" -ge "$THRESHOLD" && -n "$READY_LABEL" ]]; then
-    SIGNAL_LABEL="$READY_LABEL"
-    STATUS_MSG="Exploration complete. Issue labeled \`${SIGNAL_LABEL}\` for the next pipeline stage."
+    if validate_label_name "$READY_LABEL"; then
+      SIGNAL_LABEL="$READY_LABEL"
+      STATUS_MSG="Exploration complete. Issue labeled \`${SIGNAL_LABEL}\` for the next pipeline stage."
+    fi
   elif [[ "$CONFIDENCE_INT" -lt "$THRESHOLD" && -n "$NEEDS_INFO_LABEL" ]]; then
-    SIGNAL_LABEL="$NEEDS_INFO_LABEL"
-    STATUS_MSG="Exploration found insufficient context (confidence: ${CONFIDENCE_INT}/${THRESHOLD}). Issue labeled \`${SIGNAL_LABEL}\` — additional input may be needed."
+    if validate_label_name "$NEEDS_INFO_LABEL"; then
+      SIGNAL_LABEL="$NEEDS_INFO_LABEL"
+      STATUS_MSG="Exploration found insufficient context (confidence: ${CONFIDENCE_INT}/${THRESHOLD}). Issue labeled \`${SIGNAL_LABEL}\` — additional input may be needed."
+    fi
   fi
 fi
 
-# --- Add label when configured ---
+# --- Add label when configured (skip labels that do not already exist on GitHub) ---
 if [[ -n "$SIGNAL_LABEL" ]]; then
   if [[ -n "${GITHUB_ISSUE_NUMBER:-}" && "${GITHUB_ISSUE_NUMBER}" != "N/A" ]]; then
-    gh api "repos/${REPO_FULL_NAME}/issues/${GITHUB_ISSUE_NUMBER}/labels" \
-      -f "labels[]=${SIGNAL_LABEL}" --silent 2>/dev/null || true
-    echo "::notice::Added label '${SIGNAL_LABEL}' to GitHub issue #${GITHUB_ISSUE_NUMBER}"
+    EXISTING_GH_LABELS=$(gh api "repos/${REPO_FULL_NAME}/labels" --paginate --jq '.[].name' 2>/dev/null || true)
+    if github_label_exists "$SIGNAL_LABEL"; then
+      gh api "repos/${REPO_FULL_NAME}/issues/${GITHUB_ISSUE_NUMBER}/labels" \
+        -f "labels[]=${SIGNAL_LABEL}" --silent 2>/dev/null || true
+      echo "::notice::Added label '${SIGNAL_LABEL}' to GitHub issue #${GITHUB_ISSUE_NUMBER}"
+    else
+      echo "::warning::Skipping label '${SIGNAL_LABEL}' -- does not exist in repo (will not auto-create)"
+    fi
   fi
 
   if [[ "${ISSUE_SOURCE:-}" == "jira" && -n "${JIRA_HOST:-}" && -n "${JIRA_EMAIL:-}" && -n "${JIRA_API_TOKEN:-}" ]]; then
+    validate_jira_host
     AUTH=$(printf '%s:%s' "$JIRA_EMAIL" "$JIRA_API_TOKEN" | base64 -w0)
     curl -sSf -X PUT \
       -H "Authorization: Basic $AUTH" \
@@ -148,7 +163,7 @@ fi
 # Extract structured data from result JSON
 GAPS_SECTION=""
 if [[ "$GAP_COUNT" -gt 0 ]]; then
-  GAPS_LIST=$(jq -r '(.gaps // [])[] | if type == "object" then "- **\(.category // .type // "definition gap")**: \(.description // .text // tostring)" else "- \(tostring)" end' "${RESULT_FILE}" 2>/dev/null | head -8 || true)
+  GAPS_LIST=$(jq -r '(.gaps // [])[] | if type == "object" then "- **\(.dimension // "definition gap")**: \(.description // .text // tostring)" else "- \(tostring)" end' "${RESULT_FILE}" 2>/dev/null | head -8 || true)
   if [[ -n "$GAPS_LIST" ]]; then
     GAPS_SECTION="
 ### Definition Gaps Identified (${GAP_COUNT})

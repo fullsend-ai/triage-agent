@@ -23,6 +23,7 @@ WORKSPACE="/tmp/workspace"
 mkdir -p "$WORKSPACE"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/comment-helpers.sh"
 
 echo "::notice::Pre-explore: fetching issue data (source=${ISSUE_SOURCE}, key=${ISSUE_KEY})"
 
@@ -47,6 +48,7 @@ if [[ "${ISSUE_SOURCE}" == "jira" ]]; then
     echo "ERROR: Jira credentials not set (JIRA_HOST, JIRA_EMAIL, JIRA_API_TOKEN)"
     exit 1
   fi
+  validate_jira_host
 
   JIRA_BASE="https://${JIRA_HOST}/rest/api/3"
   AUTH=$(printf '%s:%s' "$JIRA_EMAIL" "$JIRA_API_TOKEN" | base64 -w0)
@@ -114,13 +116,13 @@ if [[ "${ISSUE_SOURCE}" == "jira" ]]; then
         jq -r ".comments[$i].body // \"\"" "$COMMENTS_TMPFILE" > "$COMMENTS_TMPDIR/body_$i.txt"
       fi
     done
-    COMMENTS_JSON=$(python3 -c "
-import json, os, re, sys
-with open('$COMMENTS_TMPFILE') as f:
+    COMMENTS_JSON=$(JIRA_EMAIL="$JIRA_EMAIL" COMMENTS_TMPFILE="$COMMENTS_TMPFILE" COMMENTS_TMPDIR="$COMMENTS_TMPDIR" python3 -c "
+import json, os, re
+with open(os.environ['COMMENTS_TMPFILE']) as f:
     data = json.load(f)
 result = []
 # Service account emails used by automation are filtered from comments.
-AGENT_EMAIL = '${JIRA_EMAIL}'
+AGENT_EMAIL = os.environ.get('JIRA_EMAIL', '')
 SKIP_PATTERNS = [
     r'fullsend dispatched',  # dispatch confirmations
 ]
@@ -129,7 +131,7 @@ for i, comment in enumerate(data['comments']):
     author = comment.get('author', {}).get('emailAddress', '')
     if author == AGENT_EMAIL:
         continue
-    body_path = os.path.join('$COMMENTS_TMPDIR', f'body_{i}.txt')
+    body_path = os.path.join(os.environ['COMMENTS_TMPDIR'], f'body_{i}.txt')
     with open(body_path) as bf:
         body = bf.read().rstrip('\n')
     if any(re.match(p, body.strip()) for p in SKIP_PATTERNS):
@@ -402,7 +404,11 @@ extract_repo_refs_from_previous_explore() {
 
   # Download the most recent explore result (last URL in the list)
   EXPLORE_URL=$(echo "$ATTACHMENTS" | tail -1)
-  PREV_EXPLORE=$(curl -sSfL -H "Authorization: Basic $AUTH" "$EXPLORE_URL" 2>/dev/null || true)
+  if [[ "$EXPLORE_URL" != "https://${JIRA_HOST}/"* ]]; then
+    echo "  (previous explore attachment URL rejected — host mismatch)" >&2
+    return
+  fi
+  PREV_EXPLORE=$(curl -sSf -H "Authorization: Basic $AUTH" "$EXPLORE_URL" 2>/dev/null || true)
 
   if [[ -z "$PREV_EXPLORE" ]]; then
     echo "  (previous explore attachment download failed)" >&2

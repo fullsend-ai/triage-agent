@@ -282,9 +282,9 @@ been useful but were unavailable (GitLab repos, internal docs, Slack, CI data).
 ```json
 {
   "input": {
-    "source": "jira | github",
+    "source": "jira | github | text | web",
     "key": "PROJECT-1234",
-    "level": "feature | epic | story | task | issue",
+    "level": "outcome | feature | epic | story | task | issue",
     "summary": "..."
   },
   "technical_landscape": {

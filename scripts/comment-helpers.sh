@@ -25,7 +25,19 @@ _CH_AGENT=""
 _CH_USE_GITHUB=false
 _CH_MARKER=""
 _CH_GH_MARKER=""
+# Total "Previous · …" expand nodes to retain (including the new snapshot).
 _CH_MAX_HISTORY=3
+
+validate_jira_host() {
+  if [[ -z "${JIRA_HOST:-}" ]]; then
+    echo "ERROR: JIRA_HOST not set"
+    exit 1
+  fi
+  if [[ ! "${JIRA_HOST}" =~ ^[a-zA-Z0-9.-]+\.atlassian\.net$ ]]; then
+    echo "ERROR: JIRA_HOST must be a *.atlassian.net hostname, got: ${JIRA_HOST}"
+    exit 1
+  fi
+}
 
 init_comment_helpers() {
   _CH_AGENT="$1"
@@ -36,6 +48,7 @@ init_comment_helpers() {
 
 _find_sticky_comment_jira() {
   local key="$1"
+  validate_jira_host
   local auth
   auth=$(printf '%s:%s' "$JIRA_EMAIL" "$JIRA_API_TOKEN" | base64 -w0)
 
@@ -68,7 +81,7 @@ _build_jira_adf_with_history() {
   fi
 
   old_current=$(echo "$old_body" | jq '[.content[]? | select(.type != "expand")]')
-  old_history=$(echo "$old_body" | jq --argjson max "$_CH_MAX_HISTORY" \
+  old_history=$(echo "$old_body" | jq --argjson max "$((_CH_MAX_HISTORY - 1))" \
     '[.content[]? | select(.type == "expand" and (.attrs.title // "" | startswith("Previous")))] | .[:$max]')
 
   timestamp=$(date -u +"%b %d, %H:%M UTC")
@@ -98,6 +111,7 @@ _redact_secrets() {
   if command -v fullsend >/dev/null 2>&1; then
     fullsend scan output
   else
+    echo "::warning::fullsend not on PATH — posting comment without secret scanning" >&2
     cat
   fi
 }
@@ -163,6 +177,7 @@ new_comment() {
     printf '%s' "$body" | gh issue comment "$GITHUB_ISSUE_NUMBER" \
       --repo "$REPO_FULL_NAME" --body-file - 2>/dev/null || true
   elif [[ "${ISSUE_SOURCE:-}" == "jira" && -n "${JIRA_HOST:-}" && -n "${JIRA_EMAIL:-}" && -n "${JIRA_API_TOKEN:-}" ]]; then
+    validate_jira_host
     local auth
     auth=$(printf '%s:%s' "$JIRA_EMAIL" "$JIRA_API_TOKEN" | base64 -w0)
     local adf_body

@@ -1,5 +1,6 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "explore-result.schema.json",
   "title": "Exploration Result",
   "description": "Output schema for the explore agent — public research context for a work item.",
   "type": "object",
@@ -51,6 +52,16 @@
           "state": { "type": "string" },
           "relevance": { "type": "string" }
         }
+      }
+    },
+    "impact_radius": {
+      "type": "object",
+      "properties": {
+        "files": { "type": "array", "items": { "type": "string" } },
+        "packages": { "type": "array", "items": { "type": "string" } },
+        "interfaces": { "type": "array", "items": { "type": "string" } },
+        "recent_commits": { "type": "integer", "minimum": 0 },
+        "stability": { "type": "string", "enum": ["active", "stable", "dormant"] }
       }
     },
     "architectural_constraints": {
@@ -108,6 +119,6 @@
         }
       }
     },
-    "summary": { "type": "string", "maxLength": 2000 }
+    "summary": { "type": "string", "maxLength": 1000 }
   }
 }

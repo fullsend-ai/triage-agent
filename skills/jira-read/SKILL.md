@@ -29,7 +29,6 @@ The pre-script fetches issue data and writes it to `$ISSUE_CONTEXT`:
   "priority": "High",
   "labels": ["label1", "label2"],
   "reporter": "user@example.com",
-  "assignee": "user@example.com",
   "created": "2026-01-15T10:00:00.000+0000",
   "updated": "2026-05-18T14:30:00.000+0000",
   "parent": {
@@ -62,8 +61,14 @@ The pre-script fetches issue data and writes it to `$ISSUE_CONTEXT`:
   ],
   "project": {
     "key": "PROJ",
-    "name": "Secure Sign",
-    "hierarchy": ["Outcome", "Feature", "Epic", "Story", "Task"]
+    "name": "Project Name",
+    "available_issue_types": [
+      {"name": "Feature", "subtask": false, "hierarchyLevel": 1, "description": "..."}
+    ],
+    "team_usage": {
+      "type_counts": [{"type": "Story", "count": 12}],
+      "common_labels": [{"label": "backend", "count": 5}]
+    }
   }
 }
 ```
