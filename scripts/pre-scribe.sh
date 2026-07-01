@@ -106,11 +106,13 @@ JWT_SIGNATURE=$(printf '%s.%s' "${JWT_HEADER}" "${JWT_CLAIMS}" \
 JWT_ASSERTION="${JWT_HEADER}.${JWT_CLAIMS}.${JWT_SIGNATURE}"
 echo "::add-mask::${JWT_ASSERTION}"
 
+set +e
 TOKEN_RESPONSE=$(printf 'grant_type=urn%%3Aietf%%3Aparams%%3Aoauth%%3Agrant-type%%3Ajwt-bearer&assertion=%s' "${JWT_ASSERTION}" \
   | curl -fsSL -X POST https://oauth2.googleapis.com/token \
     -H "Content-Type: application/x-www-form-urlencoded" \
     --data-binary @- 2>/dev/null)
 TOKEN_CURL_RC=$?
+set -e
 
 unset JWT_ASSERTION JWT_HEADER JWT_CLAIMS JWT_SIGNATURE
 
@@ -248,6 +250,11 @@ while read -r doc; do
   #
   # Strategy: keep Summary + Next steps (with names stripped), drop Details
   # and everything after it (transcript, timestamps, editor boilerplate).
+  #
+  # Name scrubbing is format-specific: bracketed Gemini attributions like
+  # [John Smith] are replaced. Unbracketed names in Summary/Next steps
+  # (e.g. "per Sarah's suggestion") are not caught here — the agent prompt
+  # and public_safe gate provide additional defense-in-depth.
   STRUCTURAL_SCRUB=$(printf '%s' "${CLEAN_UNICODE}" \
     | tr -d '\r' \
     | sed -E '/^Invited /d' \

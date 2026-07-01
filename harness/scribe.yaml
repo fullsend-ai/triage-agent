@@ -1,5 +1,6 @@
 ---
 agent: agents/scribe.md
+doc: docs/agents/scribe.md
 model: opus
 image: ghcr.io/fullsend-ai/fullsend-sandbox:latest
 policy: policies/scribe.yaml

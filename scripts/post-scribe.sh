@@ -36,6 +36,9 @@ if [[ "${DRY_RUN}" == "true" ]]; then
   echo "::notice::DRY RUN — no GitHub writes will be performed"
 fi
 
+WOULD_BE=""
+[[ "${DRY_RUN}" == "true" ]] && WOULD_BE="would be "
+
 # ============================================================
 # Mode: comments_only, new_issues_only, or all (default)
 # ============================================================
@@ -153,8 +156,8 @@ jq '
     map(
       if length == 1 then .[0]
       else
-        reduce .[] as $t (.[0];
-          .summary = (.summary + "\n\n" + $t.summary) |
+        reduce .[1:][] as $t (.[0];
+          .summary = ((.summary // "") + (if (.summary // "") != "" and ($t.summary // "") != "" then "\n\n" else "" end) + ($t.summary // "")) |
           .confidence = ([.confidence, $t.confidence] | max) |
           if $t.public_safe == false then .public_safe = false | .public_safe_category = $t.public_safe_category else . end
         )
@@ -221,6 +224,11 @@ for i in $(seq 0 $((TOPIC_COUNT - 1))); do
     continue
   fi
 
+  if [[ -z "${SUMMARY}" || "${SUMMARY}" == "null" ]]; then
+    gate_reject "${TOPIC}" "missing or null summary for existing issue comment"
+    continue
+  fi
+
   # Gate: confidence
   if (( $(echo "${CONFIDENCE} < ${MIN_CONFIDENCE}" | bc -l) )); then
     gate_reject "${TOPIC}" "confidence ${CONFIDENCE} below threshold ${MIN_CONFIDENCE}"
@@ -262,8 +270,8 @@ for i in $(seq 0 $((TOPIC_COUNT - 1))); do
     # Idempotency: check if we already commented with this notes URL
     NOTES_URL=$(jq -r ".topics[${i}].summary" "${RESULT_FILE}" | grep -oP '\[Meeting notes\]\(\K[^)]+' || echo "")
     if [[ -n "${NOTES_URL}" ]]; then
-      EXISTING=$(gh api "repos/${SCRIBE_REPO}/issues/${ISSUE_NUM}/comments" \
-        --jq "[.[] | select(.body | contains(\"${NOTES_URL}\"))] | length" 2>/dev/null || echo "0")
+      EXISTING=$(gh api "repos/${SCRIBE_REPO}/issues/${ISSUE_NUM}/comments" 2>/dev/null \
+        | jq --arg url "${NOTES_URL}" '[.[] | select(.body | contains($url))] | length' 2>/dev/null || echo "0")
       if [[ "${EXISTING}" -gt 0 ]]; then
         echo "    SKIP: duplicate comment (notes URL already posted)"
         continue
@@ -380,8 +388,8 @@ echo "=== Scribe Post-Script Summary ==="
 echo "  Run mode: ${RUN_MODE_LABEL}"
 echo "  Agent mode: ${SCRIBE_MODE}"
 echo "  Topics processed: ${TOPIC_COUNT}"
-echo "  Comments ${DRY_RUN:+would be }posted: ${#COMMENT_TOPICS[@]}"
-echo "  New issues ${DRY_RUN:+would be }created: ${#NEW_ISSUE_TITLES[@]}"
+echo "  Comments ${WOULD_BE}posted: ${#COMMENT_TOPICS[@]}"
+echo "  New issues ${WOULD_BE}created: ${#NEW_ISSUE_TITLES[@]}"
 echo "  Gate rejections: ${REJECTED}"
 echo "    Content gate: ${CONTENT_GATE_REJECTIONS}"
 echo "  New proposals reviewed: ${NEW_COUNT}"
@@ -399,8 +407,8 @@ if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
   echo "| Metric | Count |"
   echo "|--------|------:|"
   echo "| Topics processed | ${TOPIC_COUNT} |"
-  echo "| Comments ${DRY_RUN:+would be }posted | ${#COMMENT_TOPICS[@]} |"
-  echo "| New issues ${DRY_RUN:+would be }created | ${#NEW_ISSUE_TITLES[@]} |"
+  echo "| Comments ${WOULD_BE}posted | ${#COMMENT_TOPICS[@]} |"
+  echo "| New issues ${WOULD_BE}created | ${#NEW_ISSUE_TITLES[@]} |"
   echo "| Gate rejections | ${REJECTED} |"
   echo "| Content gate rejections | ${CONTENT_GATE_REJECTIONS} |"
   if [[ "${SKIPPED_NEW_ISSUES}" -gt 0 ]]; then
@@ -409,7 +417,7 @@ if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
   echo ""
 
   if [[ ${#COMMENT_TOPICS[@]} -gt 0 ]]; then
-    echo "**Comments ${DRY_RUN:+would be }posted:** ${#COMMENT_TOPICS[@]}"
+    echo "**Comments ${WOULD_BE}posted:** ${#COMMENT_TOPICS[@]}"
     for idx in "${!COMMENT_TOPICS[@]}"; do
       echo "- [#${COMMENT_ISSUES[$idx]} — ${COMMENT_TOPICS[$idx]}](${ISSUE_BASE}/${COMMENT_ISSUES[$idx]})"
     done
@@ -417,7 +425,7 @@ if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
   fi
 
   if [[ ${#NEW_ISSUE_TITLES[@]} -gt 0 ]]; then
-    echo "**New issues ${DRY_RUN:+would be }filed:** ${#NEW_ISSUE_TITLES[@]}"
+    echo "**New issues ${WOULD_BE}filed:** ${#NEW_ISSUE_TITLES[@]}"
     for idx in "${!NEW_ISSUE_TITLES[@]}"; do
       if [[ -n "${NEW_ISSUE_URLS[$idx]:-}" ]]; then
         echo "- [${NEW_ISSUE_TITLES[$idx]}](${NEW_ISSUE_URLS[$idx]})"

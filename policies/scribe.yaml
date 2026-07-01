@@ -1,5 +1,11 @@
 version: 1
 
+# Sandbox policy for the scribe agent.
+#
+# Needs Vertex AI for inference only. curl intentionally excluded from
+# vertex_ai binaries to prevent disallowedTools bypass via raw HTTP with
+# the injected GCP service account key at /tmp/.gcp-credentials.json.
+
 filesystem_policy:
   include_workdir: true
   read_only: [/usr, /lib, /proc, /dev/urandom, /app, /etc, /var/log]
@@ -20,6 +26,5 @@ network_policies:
         enforcement: enforce
         access: read-write
     binaries:
-      - path: "**/curl"
       - path: "**/claude"
       - path: "**/node"
