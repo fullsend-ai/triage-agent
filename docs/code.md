@@ -52,4 +52,4 @@ None.
 
 ## Source
 
-[`internal/scaffold/fullsend-repo/harness/code.yaml`](../../internal/scaffold/fullsend-repo/harness/code.yaml)
+[`harness/code.yaml`](../harness/code.yaml)

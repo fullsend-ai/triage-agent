@@ -56,4 +56,4 @@ None.
 
 ## Source
 
-[`internal/scaffold/fullsend-repo/harness/retro.yaml`](../../internal/scaffold/fullsend-repo/harness/retro.yaml)
+[`harness/retro.yaml`](../harness/retro.yaml)

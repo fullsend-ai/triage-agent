@@ -63,4 +63,4 @@ None.
 
 ## Source
 
-[`internal/scaffold/fullsend-repo/harness/prioritize.yaml`](../../internal/scaffold/fullsend-repo/harness/prioritize.yaml)
+[`harness/prioritize.yaml`](../harness/prioritize.yaml)

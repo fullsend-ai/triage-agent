@@ -89,4 +89,4 @@ verdict to `comment` (applying the `requires-manual-review` label).
 
 ## Source
 
-[`internal/scaffold/fullsend-repo/harness/review.yaml`](../../internal/scaffold/fullsend-repo/harness/review.yaml)
+[`harness/review.yaml`](../harness/review.yaml)

@@ -141,4 +141,4 @@ None.
 
 ## Source
 
-[`internal/scaffold/fullsend-repo/harness/fix.yaml`](../../internal/scaffold/fullsend-repo/harness/fix.yaml)
+[`harness/fix.yaml`](../harness/fix.yaml)
